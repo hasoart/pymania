@@ -4,7 +4,18 @@ pygame.font.init()
 
 
 class TextBox:
-    def __init__(self, position, bg_image, font, font_color, text, aligment, shape):
+    #class textboxes
+    def __init__(self, position, bg_image, font, font_color, text, aligment):
+        '''
+        init for class Textbox
+        position - cords of left high corner or center
+        bg_image - image in background of text
+        font - size of font
+        font_color - color of text
+        text - text
+        aligment - 'center': position - cords of center
+                   'left': position - cords of left high corner
+        '''
         self.position = position
         self.bg_image = bg_image
         self.font = font
@@ -13,18 +24,20 @@ class TextBox:
         self.aligment = aligment
         f = pygame.font.Font(None, self.font)
         text_surface = f.render(self.text, True, self.font_color)
+        #count size based on size of text:
         self.size = (text_surface.get_width() * 6 // 5, text_surface.get_height() * 6 // 5)
         if self.aligment == 'center':
             self.position = [self.position[0] - self.size[0] / 2, self.position[1] - self.size[1] / 2]
-        self.shape = shape
 
     def get_surface(self):
-        # draw textbox
+        # get surface of drawing textbox
+        # draw background image:
         surface = pygame.Surface(self.size, pygame.SRCALPHA, 32)
         rect_surface = pygame.image.load(self.bg_image).convert_alpha()
         rect_surface = pygame.transform.scale(rect_surface, self.size)
         surface.blit(rect_surface, (0, 0))
-
+        
+        #write text
         f = pygame.font.Font(None, self.font)
         text_surface = f.render(self.text, True, self.font_color)
         x_pos = self.size[0] / 2
@@ -36,11 +49,27 @@ class TextBox:
 
 
 class Button(TextBox):
-    def __init__(self, position, bg_image, font, font_color, text, aligment, shape, func):
-        super().__init__(position, bg_image, font, font_color, text, aligment, shape)
+    def __init__(self, position, bg_image, font, font_color, text, aligment, func):
+        '''
+        init for class Button
+        position - cords of left high corner or center
+        bg_image - image in background of text
+        font - size of font
+        font_color - color of text
+        text - text
+        aligment - 'center': position - cords of center
+                   'left': position - cords of left high corner
+        func - what to do if button is clicked
+        '''
+        super().__init__(position, bg_image, font, font_color, text, aligment)
         self.func = func
 
     def click(self, event):
+        '''
+        reaction for events:
+        do func if clicked
+        event - pygame Event
+        '''
         if event.type == pygame.MOUSEBUTTONDOWN:
             rho = [event.pos[0] - self.position[0], event.pos[1] - self.position[1]]
             if rho[0] <= self.size[0] and rho[0] >= 0 and rho[1] <= self.size[1] and rho[1] >= 0:
@@ -49,6 +78,15 @@ class Button(TextBox):
 
 class Slider():
     def __init__(self, position, image, on_color, off_color, size, value):
+        '''
+        init for class Slider (Polzunok)
+        position - coords of left high corner
+        image - image of circle
+        on_color - color of part of rect before circle
+        off_color - color of part of rect after circle
+        size - size of slider
+        value - fraction of part of rect before circle and all rect
+        '''
         self.position = position
         self.image = image
         self.on_color = on_color
@@ -88,11 +126,11 @@ def settings(obj):
     print('settings')
     obj.bg_image = 'pin.jpg'
     global objects
-    menu = TextBox((screen.get_width() / 2, screen.get_height() * 2 // 8), 'box.jpg', 50, 'black', 'Settings menu', 'center', None)
-    volume = TextBox((screen.get_width() / 6, screen.get_height() * 3 // 8), 'box.jpg', 50, 'black', 'Volume', 'left', None)
-    bg_dim = TextBox((screen.get_width() / 6, screen.get_height() * 4 // 8), 'box.jpg', 50, 'black', 'Dim', 'left', None)
-    bg_blur = TextBox((screen.get_width() / 6, screen.get_height() * 5 // 8), 'box.jpg', 50, 'black', 'Blur', 'left', None)
-    offset = TextBox((screen.get_width() / 6, screen.get_height() * 6 // 8), 'box.jpg', 50, 'black', 'Offset', 'left', None)
+    menu = TextBox((screen.get_width() / 2, screen.get_height() * 2 // 8), 'box.jpg', 50, 'black', 'Settings menu', 'center')
+    volume = TextBox((screen.get_width() / 6, screen.get_height() * 3 // 8), 'box.jpg', 50, 'black', 'Volume', 'left')
+    bg_dim = TextBox((screen.get_width() / 6, screen.get_height() * 4 // 8), 'box.jpg', 50, 'black', 'Dim', 'left')
+    bg_blur = TextBox((screen.get_width() / 6, screen.get_height() * 5 // 8), 'box.jpg', 50, 'black', 'Blur', 'left')
+    offset = TextBox((screen.get_width() / 6, screen.get_height() * 6 // 8), 'box.jpg', 50, 'black', 'Offset', 'left')
     volume_slider = Slider((screen.get_width() * 4 // 6, screen.get_height() * 3 // 8), 'circle.png', 'yellow', 'black', (screen.get_width() / 5, screen.get_height() / 60), 0.6)
     objects = [menu, volume, bg_dim, bg_blur, offset, volume_slider]
 
@@ -120,10 +158,10 @@ finished = False
 # example and check working
 
 
-menu = TextBox((screen.get_width() / 2, screen.get_height() * 2 // 7), 'box.jpg', 50, 'black', 'Menu', 'center', None)
-settings = Button((screen.get_width() / 2, screen.get_height() * 3 // 7), 'rect.png', 50, 'blue', 'Settings', 'center', None, settings)
-start = Button((screen.get_width() / 2, screen.get_height() * 4 // 7), 'rect.png', 50, 'blue', 'Start', 'center', None, fun2)
-exit = Button((screen.get_width() / 2, screen.get_height() * 5 // 7), 'rect.png', 50, 'blue', 'Exit', 'center', None, fun3)
+menu = TextBox((screen.get_width() / 2, screen.get_height() * 2 // 7), 'box.jpg', 50, 'black', 'Menu', 'center')
+settings = Button((screen.get_width() / 2, screen.get_height() * 3 // 7), 'rect.png', 50, 'blue', 'Settings', 'center', settings)
+start = Button((screen.get_width() / 2, screen.get_height() * 4 // 7), 'rect.png', 50, 'blue', 'Start', 'center', fun2)
+exit = Button((screen.get_width() / 2, screen.get_height() * 5 // 7), 'rect.png', 50, 'blue', 'Exit', 'center', fun3)
 objects = [menu, settings, start, exit]
 
 while not finished:

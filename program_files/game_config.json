@@ -1,0 +1,13 @@
+{
+    "width": 1600,
+    "height": 900,
+    "FPS": 300,
+    "Beatmaps_directory": "../Beatmaps",
+    "track_width": 100,
+    "note_height": 30,
+    "hold_width": 70,
+    "hit_distance": 200,
+    "track_color": 7368816,
+    "note_color": 12456498,
+    "hold_color": 11014188
+}

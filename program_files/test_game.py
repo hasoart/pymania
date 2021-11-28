@@ -4,7 +4,7 @@ import time
 import os
 import audioplayer
 from beatmap_parser import *
-from track import Track
+from Track import Track
 
 FPS = 300
 

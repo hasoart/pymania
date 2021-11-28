@@ -42,7 +42,7 @@ def get_metadata(file):
     путь к файлу карты
     :return:
     словарик с метаданными (числовые значения не переведены в float/int)
-    (Секции [General], [Metadata], [Difficulty])
+    (Секции [General], [Metadata], [Difficulty], Background из [Events])
     https://osu.ppy.sh/wiki/en/osu%21_File_Formats/Osu_%28file_format%29
     """
     with open(file, 'r') as f:
@@ -66,6 +66,16 @@ def get_metadata(file):
             key, val = data[i].split(':')
             metadata[key] = val.strip()
             i += 1
+
+        i = data.index('[Events]\n') + 1
+        while data[i] != '\n':
+            event = data[i].split(',')
+            if event[0] == event[1] == '0':
+                metadata['Background'] = event[2]
+                break
+            i += 1
+        else:
+            metadata['Background'] = None
 
         return metadata
 

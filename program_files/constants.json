@@ -1,0 +1,25 @@
+{
+  "colors": {
+    "textbox": "black",
+    "button": "green"
+  },
+  "menu": {
+    "menu": [0.5, 0.286],
+    "settings": [0.5, 0.428],
+    "start": [0.5, 0.571],
+    "exit": [0.5, 0.714]
+  },
+  "settings": {
+    "menu_box": [],
+    "volume": [],
+    "bg_dim": [],
+    "bg_blur": [],
+    "offset": [],
+    "volume_slider": [],
+    "dim_slider": [],
+    "blur_slider": [],
+    "offset_slider": [],
+    "exit": []
+  }
+
+}

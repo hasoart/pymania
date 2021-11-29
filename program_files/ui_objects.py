@@ -9,7 +9,7 @@ pygame.font.init()
 
 class TextBox:
     # class textbox
-    def __init__(self, position, font, font_color, text, aligment, bg_image=None):
+    def __init__(self, position, font, font_color, text, aligment, bg_image=None, box_size=[1.2, 1.2]):
         """
         init for class Textbox
         position - cords of left high corner or center
@@ -29,7 +29,7 @@ class TextBox:
         f = pygame.font.Font(None, self.font)
         text_surface = f.render(self.text, True, self.font_color)
         # count size based on size of text:
-        self.size = (text_surface.get_width() * 6 // 5, text_surface.get_height() * 6 // 5)
+        self.size = (int(text_surface.get_width() * box_size[0]), int(text_surface.get_height() * box_size[1]))
         if self.aligment == 'center':
             self.position = [self.position[0] - self.size[0] / 2, self.position[1] - self.size[1] / 2]
         if self.bg_image:
@@ -55,7 +55,7 @@ class TextBox:
 
 
 class Button(TextBox):
-    def __init__(self, position, font, font_color, text, aligment, bg_image, func):
+    def __init__(self, position, font, font_color, text, aligment, bg_image, func, box_size=[1.2, 1.2]):
         """
         init for class Button
         position - cords of left high corner or center
@@ -67,7 +67,7 @@ class Button(TextBox):
                    'left': position - cords of left high corner
         func - what to do if button is clicked
         """
-        super().__init__(position, font, font_color, text, aligment, bg_image)
+        super().__init__(position, font, font_color, text, aligment, bg_image, box_size)
         self.func = func
 
     def click(self, event):
@@ -83,7 +83,7 @@ class Button(TextBox):
 
 
 class Slider:
-    def __init__(self, position, image, on_color, off_color, size, system, name, value=0.5):
+    def __init__(self, position, image, on_color, off_color, size, system, name, value=0.5, circle_scale=1.3):
         """
         init for class Slider (Polzunok)
         position - coords of left high corner
@@ -102,7 +102,7 @@ class Slider:
         self.condition = False
         self.system = system
         self.name = name
-        self.circle_scale = 1.3
+        self.circle_scale = circle_scale
         self.circle_size = (int(self.size[1] * self.circle_scale), int(self.size[1] * self.circle_scale))
         self.circle_pos = (self.position[0] + self.size[0] * self.value, self.position[1] + self.circle_size[1] / 2)
         self.circle_surface = pygame.image.load(self.image).convert_alpha()
@@ -186,48 +186,66 @@ class System:
     def menu(self):
         # open menu
         screen = self.screen
+        w = screen.get_width()
+        h = screen.get_height()
         folder = self.folder
         const = self.constants['menu']
-        menu = TextBox((screen.get_width() * const['menu'][0], screen.get_height() * const['menu'][1]),
+        box_size = self.constants['box_size']
+        color_on = self.constants['colors']['slider_on']
+        color_off = self.constants['colors']['slider_off']
+        menu = TextBox((w * const['menu'][0], h * const['menu'][1]),
                        50,
-                       self.constants['colors']['textbox'], 'Menu', 'center', os.path.join(folder, 'box.jpg'))
+                       self.constants['colors']['textbox'], 'Menu', 'center',
+                       os.path.join(folder, 'box.jpg'), box_size)
         setting = Button(
-            (screen.get_width() * const['settings'][0], screen.get_height() * const['settings'][1]), 50,
-            self.constants['colors']['button'], 'Settings', 'center', os.path.join(folder, 'rect.png'), self.settings)
-        start = Button((screen.get_width() * const['start'][0], screen.get_height() * const['start'][1]), 50,
-                       self.constants['colors']['button'], 'Start', 'center', os.path.join(folder, 'rect.png'), fun2)
-        exit = Button((screen.get_width() * const['exit'][0], screen.get_height() * const['exit'][1]), 50,
-                      self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'), fun3)
+            (w * const['settings'][0], h * const['settings'][1]), 50,
+            self.constants['colors']['button'], 'Settings', 'center', os.path.join(folder, 'rect.png'), self.settings,
+            box_size)
+        start = Button((w * const['start'][0], h * const['start'][1]), 50,
+                       self.constants['colors']['button'], 'Start', 'center', os.path.join(folder, 'rect.png'), fun2,
+                       box_size)
+        exit = Button((w * const['exit'][0], h * const['exit'][1]), 50,
+                      self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'), fun3,
+                      box_size)
         self.objects = [menu, setting, start, exit]
 
     def settings(self):
         # open settings-menu
         screen = self.screen
+        w = screen.get_width()
+        h = screen.get_height()
         folder = self.folder
-        menu_box = TextBox((screen.get_width() / 2, screen.get_height() * 2 // 8), 50,
-                           'black', 'Settings menu', 'center', os.path.join(folder, 'box.jpg'))
-        volume = TextBox((screen.get_width() / 6, screen.get_height() * 3 // 8), 50,
-                         'black', 'Volume', 'left', os.path.join(folder, 'box.jpg'))
-        bg_dim = TextBox((screen.get_width() / 6, screen.get_height() * 4 // 8), 50,
-                         'black', 'Dim', 'left', os.path.join(folder, 'box.jpg'))
-        bg_blur = TextBox((screen.get_width() / 6, screen.get_height() * 5 // 8), 50,
-                          'black', 'Blur', 'left', os.path.join(folder, 'box.jpg'))
-        offset = TextBox((screen.get_width() / 6, screen.get_height() * 6 // 8), 50,
-                         'black', 'Offset', 'left', os.path.join(folder, 'box.jpg'))
-        volume_slider = Slider((screen.get_width() * 4 // 6, screen.get_height() * 3 // 8),
+        const = self.constants['settings']
+        box_size = self.constants['box_size']
+        circle_size = self.constants['circle_size']
+        menu_box = TextBox((w * const['menu_box'][0], h * const['menu_box'][1]), 50,
+                           'black', 'Settings menu', 'center', os.path.join(folder, 'box.jpg'), box_size)
+        volume = TextBox((w * const['volume'][0], h * const['volume'][1]), 50,
+                         'black', 'Volume', 'left', os.path.join(folder, 'box.jpg'), box_size)
+        bg_dim = TextBox((w * const['bg_dim'][0], h * const['bg_dim'][1]), 50,
+                         'black', 'Dim', 'left', os.path.join(folder, 'box.jpg'), box_size)
+        bg_blur = TextBox((w * const['bg_blur'][0], h * const['bg_blur'][1]), 50,
+                          'black', 'Blur', 'left', os.path.join(folder, 'box.jpg'), box_size)
+        offset = TextBox((w * const['offset'][0], h * const['offset'][1]), 50,
+                         'black', 'Offset', 'left', os.path.join(folder, 'box.jpg'), box_size)
+        volume_slider = Slider((w * const['volume_slider'][0], h * const['volume_slider'][1]),
                                os.path.join(folder, 'circle.png'), 'yellow', 'black',
-                               (screen.get_width() / 5, screen.get_height() / 60), self, 'volume', self.sets['volume'])
-        dim_slider = Slider((screen.get_width() * 4 // 6, screen.get_height() * 4 // 8),
+                               (w * const['volume_slider_size'][0], h * const['volume_slider_size'][1]), self, 'volume',
+                               self.sets['volume'], circle_size)
+        dim_slider = Slider((w * const['dim_slider'][0], h * const['dim_slider'][1]),
                             os.path.join(folder, 'circle.png'), 'green', 'blue',
-                            (screen.get_width() / 5, screen.get_height() / 60), self, 'dim', self.sets['dim'])
-        blur_slider = Slider((screen.get_width() * 4 // 6, screen.get_height() * 5 // 8),
+                            (w * const['dim_slider_size'][0], h * const['dim_slider_size'][1]), self, 'dim',
+                            self.sets['dim'], circle_size)
+        blur_slider = Slider((w * const['blur_slider'][0], h * const['blur_slider'][1]),
                              os.path.join(folder, 'circle.png'), (108, 225, 64), (142, 0, 0),
-                             (screen.get_width() / 5, screen.get_height() / 60), self, 'blur', self.sets['blur'])
-        offset_slider = Slider((screen.get_width() * 4 // 6, screen.get_height() * 6 // 8),
+                             (w * const['blur_slider_size'][0], h * const['blur_slider_size'][1]), self, 'blur',
+                             self.sets['blur'], circle_size)
+        offset_slider = Slider((w * const['offset_slider'][0], h * const['offset_slider'][1]),
                                os.path.join(folder, 'circle.png'), (228, 228, 61), (96, 49, 74),
-                               (screen.get_width() / 5, screen.get_height() / 60), self, 'offset', self.sets['offset'])
-        exit = Button((screen.get_width() * 4 // 6, screen.get_height() * 7 // 8), 50,
-                      'blue', 'Back', 'left', os.path.join(folder, 'rect.png'), self.menu)
+                               (w * const['offset_slider_size'][0], h * const['offset_slider_size'][1]), self, 'offset',
+                               self.sets['offset'], circle_size)
+        exit = Button((w * const['exit'][0], h * const['exit'][1]), 50,
+                      'blue', 'Back', 'left', os.path.join(folder, 'rect.png'), self.menu, box_size)
         self.objects = [menu_box, volume, bg_dim, bg_blur, offset, volume_slider, dim_slider, blur_slider,
                         offset_slider, exit]
 

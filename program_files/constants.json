@@ -1,7 +1,9 @@
 {
   "colors": {
     "textbox": "black",
-    "button": "green"
+    "button": "green",
+    "slider_on": [240,201,148],
+    "slider_off": [27,1,9]
   },
   "menu": {
     "menu": [0.5, 0.286],
@@ -10,16 +12,22 @@
     "exit": [0.5, 0.714]
   },
   "settings": {
-    "menu_box": [],
-    "volume": [],
-    "bg_dim": [],
-    "bg_blur": [],
-    "offset": [],
-    "volume_slider": [],
-    "dim_slider": [],
-    "blur_slider": [],
-    "offset_slider": [],
-    "exit": []
-  }
+    "menu_box": [0.5, 0.25],
+    "volume": [0.17, 0.375],
+    "bg_dim": [0.17, 0.5],
+    "bg_blur": [0.17, 0.625],
+    "offset": [0.17, 0.75],
+    "volume_slider": [0.67, 0.375],
+    "dim_slider": [0.67, 0.5],
+    "blur_slider": [0.67, 0.625],
+    "offset_slider": [0.67, 0.75],
+    "exit": [0.67, 0.875],
+    "volume_slider_size": [0.3, 0.02],
+    "dim_slider_size": [0.3, 0.02],
+    "blur_slider_size": [0.3, 0.02],
+    "offset_slider_size": [0.3, 0.02]
+  },
+  "box_size": [1.2, 1.2],
+  "circle_size": 1.3
 
 }

@@ -69,10 +69,12 @@ def get_metadata(file):
 
         i = data.index('[Events]\n') + 1
         while data[i] != '\n':
-            event = data[i].split(',')
-            if event[0] == event[1] == '0':
-                metadata['Background'] = event[2]
-                break
+            if not data[i].startswith('//'):
+                event = data[i].split(',')
+
+                if event[0] == event[1] == '0':
+                    metadata['Background'] = event[2]
+                    break
             i += 1
         else:
             metadata['Background'] = None

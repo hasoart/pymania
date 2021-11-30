@@ -3,8 +3,10 @@ import pygame
 import os
 import pathlib
 import json
+import audioplayer
 
 pygame.font.init()
+pygame.mixer.init()
 
 
 class TextBox:
@@ -135,9 +137,9 @@ class Slider:
 
         # draw text:
         f = pygame.font.Font(None, self.font)
-        text_surface = f.render(str(self.value)[:4], True, self.font_color)
+        text_surface = f.render(str(round(self.value, 2)), True, self.font_color)
         surface = pygame.Surface(
-            (self.size[0] * self.circle_scale, self.size[1] * ratio[1]+text_surface.get_height()),
+            (self.size[0] * self.circle_scale, self.size[1] * ratio[1] + text_surface.get_height()),
             pygame.SRCALPHA,
             32)
         surface.blit(text_surface, (
@@ -178,9 +180,34 @@ class Slider:
             self.condition = False
 
 
+class Song:
+    def __init__(self, file, cur_time=0, volume=0.5, blur=0.5, dim=0.5):
+        """
+        :param file: sound file
+        :param cur_time: current time of music
+        :param volume: volume of music
+        :param blur: parameter of sound
+        :param dim: parameter of sound
+        """
+
+        self.file = file
+        self.cur_time = cur_time
+        self.volume = volume
+        self.blur = blur
+        self.dim = dim
+
+    def get_cur_time(self):
+        return self.cur_time
+
+    def play(self):
+        pygame.mixer.music.load(self.file)
+        pygame.mixer.music.play()
+        pygame.mixer.music.set_pos(self.cur_time)
+
+
 class System:
     # class that have all parametries of during menu-pack
-    def __init__(self, bg_image, screen, volume=0.5, dim=0.5, blur=0.5, offset=0.5):
+    def __init__(self, bg_image, screen, volume=0.5, dim=0.5, blur=0.5, offset=0.5, FPS=30):
         """
         init for class System
         bg_image - image of background screen
@@ -189,11 +216,13 @@ class System:
         dim - characterist of sound
         blur - characterist of sound
         offset - contacting sound and picture
+        FPS - fotos per second
         """
         self.sets = {'volume': volume, 'dim': dim, 'blur': blur, 'offset': offset}
         self.screen = screen
         self.bg_image = bg_image
         self.objects = []
+        self.FPS = FPS
         # open file of pictures:
         full_path = os.path.abspath(os.curdir)
         folder = os.path.join(pathlib.Path(full_path).parents[0], 'assets')
@@ -205,6 +234,7 @@ class System:
         self.bg_surface = pygame.image.load(os.path.join(self.folder, self.bg_image)).convert_alpha()
         self.screen.blit(self.bg_surface, (0, 0))
         self.bg_surface = pygame.transform.scale(self.bg_surface, (self.screen.get_width(), self.screen.get_height()))
+        self.start_time = pygame.time.get_ticks()
 
     def set(self, name, value):
         # set some parametres of game
@@ -289,7 +319,10 @@ class System:
 
     def play(self):
         # start menu-window
-        FPS = 30
+        FPS = self.FPS
+        # example of music:
+        sound = Song(os.path.join(self.folder, 'song.mp3'), pygame.time.get_ticks()-self.start_time)
+        sound.play()
 
         pygame.display.update()
         clock = pygame.time.Clock()
@@ -335,8 +368,6 @@ pygame.quit()
 
 '''
 TODO:
-number near slider
-
 add music
 
 '''

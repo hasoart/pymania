@@ -37,6 +37,8 @@ class TextBox:
         if self.bg_image:
             rect_surface = pygame.image.load(self.bg_image).convert_alpha()
             self.rect_surface = pygame.transform.scale(rect_surface, self.size)
+        else:
+            self.rect_surface = None
 
     def get_surface(self):
         # get surface of drawing textbox
@@ -84,7 +86,8 @@ class Button(TextBox):
 
 
 class Slider:
-    def __init__(self, position, image, on_color, off_color, size, system, name, value=0.5, circle_scale=1.3):
+    def __init__(self, position, image, on_color, off_color, size, system, name, font, font_color, value=0.5,
+                 circle_scale=1.3):
         """
         init for class Slider (Polzunok)
         position - coords of left high corner
@@ -94,6 +97,8 @@ class Slider:
         size - size of slider
         system - system of game objects (System)
         name - name of slider
+        font - size of font
+        font_color - color of text
         value - fraction of part of rect before circle and all rect
         circle_scale - ratio of y_size of slider to radius of circle
         """
@@ -106,6 +111,8 @@ class Slider:
         self.condition = False
         self.system = system
         self.name = name
+        self.font = font
+        self.font_color = font_color
         self.circle_scale = circle_scale
         # count circle_size and pos based on value, size and position
         self.circle_size = (int(self.size[1] * self.circle_scale), int(self.size[1] * self.circle_scale))
@@ -123,9 +130,18 @@ class Slider:
 
     def get_surface(self):
         # get surface of drawing textbox
+        ratio = self.system.constants['settings'][self.name + '_value']
         # draw background image:
-        surface = pygame.Surface((self.size[0] * self.circle_scale, self.size[1] * self.circle_scale), pygame.SRCALPHA,
-                                 32)
+
+        # draw text:
+        f = pygame.font.Font(None, self.font)
+        text_surface = f.render(str(self.value)[:4], True, self.font_color)
+        surface = pygame.Surface(
+            (self.size[0] * self.circle_scale, self.size[1] * ratio[1]+text_surface.get_height()),
+            pygame.SRCALPHA,
+            32)
+        surface.blit(text_surface, (
+            self.size[0] / 2 - text_surface.get_width() / 2, ratio[1] * self.size[1] - text_surface.get_height() / 2))
         # draw rects:
         pygame.draw.rect(surface, self.on_color,
                          ((0, self.size[1] * (self.circle_scale - 1) / 2), (self.size[0] * self.value, self.size[1])))
@@ -134,6 +150,7 @@ class Slider:
             (self.size[0] * (1 - self.value), self.size[1])))
         # draw circle:
         surface.blit(self.circle_surface, (self.size[0] * self.value - self.circle_size[0] / 2, 0))
+
         return surface
 
     def click(self, event):
@@ -251,19 +268,19 @@ class System:
         volume_slider = Slider((w * const['volume_slider'][0], h * const['volume_slider'][1]),
                                os.path.join(folder, 'circle.png'), color_on, color_off,
                                (w * const['volume_slider_size'][0], h * const['volume_slider_size'][1]), self, 'volume',
-                               self.sets['volume'], circle_size)
+                               font, self.constants['colors']['textbox'], self.sets['volume'], circle_size)
         dim_slider = Slider((w * const['dim_slider'][0], h * const['dim_slider'][1]),
                             os.path.join(folder, 'circle.png'), color_on, color_off,
                             (w * const['dim_slider_size'][0], h * const['dim_slider_size'][1]), self, 'dim',
-                            self.sets['dim'], circle_size)
+                            font, self.constants['colors']['textbox'], self.sets['dim'], circle_size)
         blur_slider = Slider((w * const['blur_slider'][0], h * const['blur_slider'][1]),
                              os.path.join(folder, 'circle.png'), color_on, color_off,
                              (w * const['blur_slider_size'][0], h * const['blur_slider_size'][1]), self, 'blur',
-                             self.sets['blur'], circle_size)
+                             font, self.constants['colors']['textbox'], self.sets['blur'], circle_size)
         offset_slider = Slider((w * const['offset_slider'][0], h * const['offset_slider'][1]),
                                os.path.join(folder, 'circle.png'), color_on, color_off,
                                (w * const['offset_slider_size'][0], h * const['offset_slider_size'][1]), self, 'offset',
-                               self.sets['offset'], circle_size)
+                               font, self.constants['colors']['textbox'], self.sets['offset'], circle_size)
         exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
                       self.constants['colors']['button'], 'Back', 'left', os.path.join(folder, 'rect.png'), self.menu,
                       box_size)
@@ -318,7 +335,6 @@ pygame.quit()
 
 '''
 TODO:
-constants into file
 number near slider
 
 add music

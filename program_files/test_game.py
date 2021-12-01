@@ -23,8 +23,8 @@ mp3 = '../Beatmaps/' + beatmaps[beatmap_number] + '/' + metadata['AudioFilename'
 
 hitobjects = get_hitobjects(file)
 
-track_count = int(metadata['CircleSize'])
-tracks = [Track(i, 'a', fall_time=1000) for i in range(track_count)]
+# track_count = int(metadata['CircleSize'])
+# tracks = [Track(i, 'a', fall_time=1000) for i in range(track_count)]
 
 pg.init()
 screen = pg.display.set_mode((1600, 900))

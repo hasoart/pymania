@@ -25,6 +25,7 @@ class GameMaster:
 
         self.metadata = get_metadata(self.beatmap)
         self.hitobjects = get_hitobjects(self.beatmap)
+        self.hitobject_count = len(self.hitobjects)
 
         self.width, self.height = surface.get_size()
 
@@ -33,27 +34,29 @@ class GameMaster:
 
         self.settings = settings
 
+        self.score = 0
+        self.score_list = []
+
         self.tracks = []
 
         self.track_count = int(self.metadata['CircleSize'])
         self.fall_time = 1000
 
         for i in range(self.track_count):
-            self.tracks += [Track(i, self.settings[f'{self.track_count}k_keys'][i], hit_distance=self.game_config['hit_distance'],
+            self.tracks += [Track(i, self.settings[f'{self.track_count}k_keys'][i], self.score_list, hit_distance=self.game_config['hit_distance'],
                                   width=self.game_config['track_width'], height=self.height,
                                   note_height=self.game_config['note_height'], hold_width=self.game_config['hold_width'],
                                   bg_color=self.game_config['track_color'], note_color=self.game_config['note_color'],
                                   hold_color=self.game_config['hold_color'], fall_time=self.fall_time)]
 
-        self.score = 0
 
         self.bg_image = pg.image.load(os.path.join(beatmap_folder, self.metadata['Background']))
         bg_width, bg_height = self.bg_image.get_size()
 
         if bg_height * self.width >= bg_width * self.height:
-            self.bg_image = pg.transform.scale(self.bg_image, (self.width, bg_height * self.width // bg_width))
+            self.bg_image = pg.transform.smoothscale(self.bg_image, (self.width, bg_height * self.width // bg_width))
         else:
-            self.bg_image = pg.transform.scale(self.bg_image, (bg_width * self.height // bg_height, self.height))
+            self.bg_image = pg.transform.smoothscale(self.bg_image, (bg_width * self.height // bg_height, self.height))
 
     def render(self):
         self.surface.blit(self.bg_image, (0, 0))
@@ -73,27 +76,43 @@ class GameMaster:
         handler = EventHandler([(pg.QUIT, exit)], key_events)
 
         clock = pg.time.Clock()
-        framerate = self.game_config['FPS']
+        FPS = self.game_config['FPS']
 
         song = os.path.join(self.beatmap_folder, self.metadata['AudioFilename'])
         player = audioplayer.AudioPlayer(song)
 
+        render_start = 0
+
         player.play()
         start_time = time.time() * 1000
         while not finished:
-
             current_time = time.time() * 1000
-            for track in self.tracks:
-                track.update_surface(current_time - start_time, self.hitobjects)
+            map_time = current_time - start_time
 
+            # Считает какие ноты видны, чтобы рендерить только их
+            while True:
+                if self.hitobjects[render_start]['type'] == 'note':
+                    obj_time = self.hitobjects[render_start]['time']
+                else:
+                    obj_time = self.hitobjects[render_start]['endTime']
+                if obj_time >= map_time - 400 or render_start == self.hitobject_count - 1:
+                    break
+                render_start += 1
+
+            i = render_start
+            while True:
+                if self.hitobjects[i]['time'] >= map_time + 400 + self.fall_time or i == self.hitobject_count - 1:
+                    break
+                i += 1
+            render_end = i + 1
+
+            for track in self.tracks:
+                track.update_surface(map_time, self.hitobjects[render_start:render_end])
             self.render()
             handler.handle()
 
             pg.display.update()
-            clock.tick(framerate)
-
-        # Время, проведенное за игрой. Имеет смысл сохранять чтобы реализовать паузу.
-        played_time = time.time() * 1000 - start_time
+            clock.tick(FPS)
 
 
 class EventHandler:

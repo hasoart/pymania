@@ -5,13 +5,14 @@ import pygame.draw as draw
 
 
 class Track:
-    def __init__(self, track_number, track_key, width=100, height=800, note_height=30, hold_width=80, fall_time=1000,
+    def __init__(self, track_number, track_key, score_list, width=100, height=800, note_height=30, hold_width=80, fall_time=1000,
                  bg_color=0xffffff, note_color=0x000000, hold_color=0x000000, key_color=(0x800406, 0xe10509),
                  hit_distance=100):
         """
 
         :param track_number: Номер дорожки
         :param track_key: Клавиша дорожки
+        :param score_list: Список хранящий очки за нажатия
         :param width: Ширина дорожки
         :param height: Высота дорожки
         :param note_height: Высота нот
@@ -25,6 +26,7 @@ class Track:
         """
         self.track_number = track_number
         self.track_key = track_key
+        self.score_list = score_list
 
         self.width = width
         self.height = height
@@ -41,7 +43,8 @@ class Track:
         self.hit_distance = hit_distance
         self.fall_time = fall_time
 
-        self.pressed = False
+        self.state = 0
+        self.last_state = 0
 
         self.surface = pg.Surface((width, height))
 
@@ -54,6 +57,9 @@ class Track:
         :return: None
         """
         self.surface.fill(self.bg_color)
+
+        draw.line(self.surface, 0xaaaaaa, (0, self.height - self.hit_distance - self.note_height),
+                  (self.width, self.height - self.hit_distance - self.note_height), 3)
 
         for hitobject in hitobject_list:
             if hitobject['x'] != self.track_number:
@@ -77,11 +83,13 @@ class Track:
                 draw.rect(self.surface, self.note_color, (0, y_start, self.width, self.note_height))
                 draw.rect(self.surface, self.note_color, (0, y_end, self.width, self.note_height))
 
-        draw.rect(self.surface, self.key_color[self.pressed],
+        draw.rect(self.surface, self.key_color[self.state],
                   (0, self.height - self.hit_distance, self.width, self.hit_distance))
 
+        self.last_state = self.state
+
     def set_state(self, state):
-        self.pressed = state
+        self.state = state
 
     def get_surface(self):
         """

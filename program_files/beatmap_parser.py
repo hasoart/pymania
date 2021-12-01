@@ -15,6 +15,7 @@ def parse_hitobject(track_count, s):
     'hitsound' - какой хитсаунд играть
     'type' - тип объекта note или hold
     'endTime' - (if type=hold) ожидаемое время отпускания холда в мс
+    'score' - количество очков полученных за данную ноту (default -1)
     """
 
     object_params = list(s.strip().split(','))
@@ -33,6 +34,8 @@ def parse_hitobject(track_count, s):
         obj['endTime'] = int(object_params[5].split(':')[0])
     else:
         raise ValueError('Make Sure this is osu!mania map.')
+
+    obj['score'] = -1
 
     return obj
 

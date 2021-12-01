@@ -4,6 +4,7 @@
     "FPS": 300,
     "Beatmaps_directory": "../Beatmaps",
     "track_width": 100,
+    "track_spacing": 10,
     "note_height": 30,
     "hold_width": 70,
     "hit_distance": 200,

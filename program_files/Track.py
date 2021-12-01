@@ -6,7 +6,8 @@ import pygame.draw as draw
 
 class Track:
     def __init__(self, track_number, track_key, width=100, height=800, note_height=30, hold_width=80, fall_time=1000,
-                 bg_color=0xffffff, note_color=0x000000, hold_color=0x000000, hit_distance=100):
+                 bg_color=0xffffff, note_color=0x000000, hold_color=0x000000, key_color=(0x800406, 0xe10509),
+                 hit_distance=100):
         """
 
         :param track_number: Номер дорожки
@@ -19,6 +20,7 @@ class Track:
         :param bg_color: Цвет дорожки
         :param note_color: Цвет нот
         :param hold_color: Цвет тонкой части холда
+        :param key_color: Union(Color, Color). Цвета клавишы при ненажатом и нажатом состояниях
         :param hit_distance: Высота точки нажатия измеряя от нижней части дорожки
         """
         self.track_number = track_number
@@ -34,9 +36,12 @@ class Track:
         self.bg_color = bg_color
         self.note_color = note_color
         self.hold_color = hold_color
+        self.key_color = key_color
 
         self.hit_distance = hit_distance
         self.fall_time = fall_time
+
+        self.pressed = False
 
         self.surface = pg.Surface((width, height))
 
@@ -64,7 +69,7 @@ class Track:
                           / self.fall_time - self.note_height
 
                 y_end = (current_time - hitobject['endTime'] + self.fall_time) * (self.height - self.hit_distance) \
-                        / self.fall_time - self.note_height
+                    / self.fall_time - self.note_height
 
                 draw.rect(self.surface, self.hold_color,
                           (self.hold_x, y_end, self.hold_width, y_start - y_end + self.note_height))
@@ -72,6 +77,11 @@ class Track:
                 draw.rect(self.surface, self.note_color, (0, y_start, self.width, self.note_height))
                 draw.rect(self.surface, self.note_color, (0, y_end, self.width, self.note_height))
 
+        draw.rect(self.surface, self.key_color[self.pressed],
+                  (0, self.height - self.hit_distance, self.width, self.hit_distance))
+
+    def set_state(self, state):
+        self.pressed = state
 
     def get_surface(self):
         """
@@ -83,10 +93,11 @@ class Track:
     def render(self, screen, x, y):
         """
         Рендерит дорожку на screen в точке (x, y)
+
         :param screen: Поверхность на которую будем рендерить
         :param x: координата x на screen
         :param y: координата y на screen
+
         :return: None
         """
         screen.blit(self.surface, (x, y))
-

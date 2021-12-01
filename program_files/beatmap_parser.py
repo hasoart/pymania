@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def parse_hitobject(track_count, s):
     """
     Парсит строку с информацией об объекте в словарик
@@ -73,7 +76,7 @@ def get_metadata(file):
                 event = data[i].split(',')
 
                 if event[0] == event[1] == '0':
-                    metadata['Background'] = event[2]
+                    metadata['Background'] = event[2][1:-1]
                     break
             i += 1
         else:
@@ -105,7 +108,7 @@ def get_hitobjects(file):
 
         i = data.index("[HitObjects]\n") + 1
 
-        hitobjects = list(map(lambda x: parse_hitobject(track_count, x), data[i:]))
+        hitobjects = np.array(list(map(lambda x: parse_hitobject(track_count, x), data[i:])), dtype=object)
 
         return hitobjects
 

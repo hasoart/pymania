@@ -11,6 +11,29 @@ from settings import settings
 from Track import Track
 
 
+class ScoreMaster:
+    def __init__(self):
+        self.score_list = []
+        self.score = 0
+        self.combo = 0
+        self.max_combo = 0
+
+    def append(self, x):
+        if x >= 50:
+            self.combo += 1
+            self.score += x * self.combo
+        else:
+            self.max_combo = max(self.combo, self.max_combo)
+            self.combo = 0
+        self.score_list.append(x)
+
+    def get_combo(self):
+        return self.combo
+
+    def get_accuracy(self):
+        return sum(self.score_list) / (300 * len(self.score_list)) if self.score_list else 1
+
+
 class GameMaster:
     def __init__(self, surface, beatmap_folder, beatmap):
         """
@@ -35,7 +58,7 @@ class GameMaster:
         self.settings = settings
 
         self.score = 0
-        self.score_list = []
+        self.score_master = ScoreMaster()
 
         self.tracks = []
 
@@ -43,12 +66,14 @@ class GameMaster:
         self.fall_time = 1000
 
         for i in range(self.track_count):
-            self.tracks += [Track(i, self.settings[f'{self.track_count}k_keys'][i], self.score_list, hit_distance=self.game_config['hit_distance'],
+            self.tracks += [Track(i, self.settings[f'{self.track_count}k_keys'][i], self.score_master,
+                                  od=int(self.metadata['OverallDifficulty']),
+                                  hit_distance=self.game_config['hit_distance'],
                                   width=self.game_config['track_width'], height=self.height,
                                   note_height=self.game_config['note_height'], hold_width=self.game_config['hold_width'],
                                   bg_color=self.game_config['track_color'], note_color=self.game_config['note_color'],
-                                  hold_color=self.game_config['hold_color'], fall_time=self.fall_time)]
-
+                                  hold_color=self.game_config['hold_color'], fall_time=self.fall_time,
+                                  key_color=self.game_config['key_color'])]
 
         self.bg_image = pg.image.load(os.path.join(beatmap_folder, self.metadata['Background']))
         bg_width, bg_height = self.bg_image.get_size()
@@ -59,8 +84,6 @@ class GameMaster:
             self.bg_image = pg.transform.smoothscale(self.bg_image, (bg_width * self.height // bg_height, self.height))
 
     def render(self):
-        self.surface.blit(self.bg_image, (0, 0))
-
         x_offset = (self.width -
                     self.track_count * (self.game_config['track_width'] + self.game_config['track_spacing']) +
                     self.game_config['track_spacing']) / 2
@@ -85,6 +108,8 @@ class GameMaster:
 
         player.play()
         start_time = time.time() * 1000
+        self.surface.blit(self.bg_image, (0, 0))
+
         while not finished:
             current_time = time.time() * 1000
             map_time = current_time - start_time
@@ -95,22 +120,23 @@ class GameMaster:
                     obj_time = self.hitobjects[render_start]['time']
                 else:
                     obj_time = self.hitobjects[render_start]['endTime']
-                if obj_time >= map_time - 400 or render_start == self.hitobject_count - 1:
+                if obj_time >= map_time - 1000 or render_start == self.hitobject_count - 1:
                     break
                 render_start += 1
 
             i = render_start
             while True:
-                if self.hitobjects[i]['time'] >= map_time + 400 + self.fall_time or i == self.hitobject_count - 1:
+                if self.hitobjects[i]['time'] >= map_time + 1000 + self.fall_time or i == self.hitobject_count - 1:
                     break
                 i += 1
             render_end = i + 1
 
             for track in self.tracks:
-                track.update_surface(map_time, self.hitobjects[render_start:render_end])
+                track.update(map_time, self.hitobjects[render_start:render_end])
             self.render()
             handler.handle()
 
+            print(self.score_master.combo, self.score_master.score, self.score_master.get_accuracy())
             pg.display.update()
             clock.tick(FPS)
 

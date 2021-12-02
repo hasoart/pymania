@@ -180,31 +180,6 @@ class Slider:
             self.condition = False
 
 
-class Song:
-    def __init__(self, file, cur_time=0, volume=0.5, blur=0.5, dim=0.5):
-        """
-        :param file: sound file
-        :param cur_time: current time of music
-        :param volume: volume of music
-        :param blur: parameter of sound
-        :param dim: parameter of sound
-        """
-
-        self.file = file
-        self.cur_time = cur_time
-        self.volume = volume
-        self.blur = blur
-        self.dim = dim
-
-    def get_cur_time(self):
-        return self.cur_time
-
-    def play(self):
-        pygame.mixer.music.load(self.file)
-        pygame.mixer.music.play()
-        pygame.mixer.music.set_pos(self.cur_time)
-
-
 class System:
     # class that have all parametries of during menu-pack
     def __init__(self, bg_image, screen, volume=0.5, dim=0.5, blur=0.5, offset=0.5, FPS=30):
@@ -235,6 +210,8 @@ class System:
         self.screen.blit(self.bg_surface, (0, 0))
         self.bg_surface = pygame.transform.scale(self.bg_surface, (self.screen.get_width(), self.screen.get_height()))
         self.start_time = pygame.time.get_ticks()
+        self.bg_sound = os.path.join(self.folder, 'menu.mp3')
+        self.music = []
 
     def set(self, name, value):
         # set some parametres of game
@@ -266,6 +243,9 @@ class System:
                       self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'), fun3,
                       box_size)
         self.objects = [menu, setting, start, exit]
+        self.bg_sound = os.path.join(self.folder, 'menu.mp3')
+        Menu = {'channel': pygame.mixer.Channel(0), 'sound': pygame.mixer.Sound(self.bg_sound)}
+        self.music.append(Menu)
 
     def settings(self):
         # open settings-menu
@@ -316,20 +296,19 @@ class System:
                       box_size)
         self.objects = [menu_box, volume, bg_dim, bg_blur, offset, volume_slider, dim_slider, blur_slider,
                         offset_slider, exit]
+        self.bg_sound = os.path.join(self.folder, 'settings.mp3')
+        settings = {'channel': pygame.mixer.Channel(1), 'sound': pygame.mixer.Sound(self.bg_sound)}
+        self.music.append(settings)
 
     def play(self):
         # start menu-window
         FPS = self.FPS
-        # example of music:
-        sound = Song(os.path.join(self.folder, 'song.mp3'), pygame.time.get_ticks()-self.start_time)
-        sound.play()
 
         pygame.display.update()
         clock = pygame.time.Clock()
         finished = False
 
         self.menu()
-
         while not finished:
             clock.tick(FPS)
             for event in pygame.event.get():
@@ -338,6 +317,15 @@ class System:
                 for obj in system.objects:
                     if type(obj) != TextBox:
                         obj.click(event)
+
+            # play bg music
+            if len(self.music) == 2:
+                self.music[0]['channel'].stop()
+                self.music.pop(0)
+            if not self.music[0]['channel'].get_busy():
+                self.music[0]['channel'].play(self.music[0]['sound'])
+            self.music[0]['channel'].set_volume(self.sets['volume'])
+            pygame.mixer.music.set_volume(self.sets['volume'])
 
             self.screen.blit(self.bg_surface, (0, 0))
             for obj in system.objects:

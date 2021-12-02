@@ -4,10 +4,12 @@
     "FPS": 300,
     "Beatmaps_directory": "../Beatmaps",
     "track_width": 100,
+    "track_spacing": 10,
     "note_height": 30,
     "hold_width": 70,
     "hit_distance": 200,
-    "track_color": 7368816,
-    "note_color": 12456498,
-    "hold_color": 11014188
+    "track_color": [209, 209, 209],
+    "note_color": [[204, 51, 153], [153, 51, 102]],
+    "hold_color": [[204, 102, 153], [153, 51, 102]],
+    "key_color": [[255, 80, 80], [255, 153, 153]]
 }

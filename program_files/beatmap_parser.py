@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def parse_hitobject(track_count, s):
     """
     Парсит строку с информацией об объекте в словарик
@@ -12,6 +15,7 @@ def parse_hitobject(track_count, s):
     'hitsound' - какой хитсаунд играть
     'type' - тип объекта note или hold
     'endTime' - (if type=hold) ожидаемое время отпускания холда в мс
+    'score' - количество очков полученных за данную ноту (default -1)
     """
 
     object_params = list(s.strip().split(','))
@@ -30,6 +34,8 @@ def parse_hitobject(track_count, s):
         obj['endTime'] = int(object_params[5].split(':')[0])
     else:
         raise ValueError('Make Sure this is osu!mania map.')
+
+    obj['score'] = -1
 
     return obj
 
@@ -73,7 +79,7 @@ def get_metadata(file):
                 event = data[i].split(',')
 
                 if event[0] == event[1] == '0':
-                    metadata['Background'] = event[2]
+                    metadata['Background'] = event[2][1:-1]
                     break
             i += 1
         else:
@@ -105,7 +111,7 @@ def get_hitobjects(file):
 
         i = data.index("[HitObjects]\n") + 1
 
-        hitobjects = list(map(lambda x: parse_hitobject(track_count, x), data[i:]))
+        hitobjects = np.array(list(map(lambda x: parse_hitobject(track_count, x), data[i:])), dtype=object)
 
         return hitobjects
 

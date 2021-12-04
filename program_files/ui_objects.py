@@ -187,13 +187,14 @@ class Slider:
 
 
 class Drop_Down:
-    def __init__(self, position, image, font, font_color, objects, constants):
+    def __init__(self, position, image, font, font_color, objects, constants, main_size=None):
         """
-        :param position:
-        :param image:
-        :param font:
-        :param font_color:
+        :param position: pos of left high corner of main block
+        :param image: image of arrow
+        :param font: font of text
+        :param font_color: colour of text
         :param objects: [{'text':'', 'type':main/not_main, 'func':func, 'bg_image':bg_image},...,]
+        :param constants: constants of game like screen or file with data
         """
         self.position = position
         self.image = image
@@ -204,11 +205,22 @@ class Drop_Down:
         self.size = ()
         self.additional_objects = []
         self.constants = constants
+
+        # count font of text if main_size:
+        max_size = [0, 0]
+        if main_size:
+            for obj in self.objects:
+                f = pygame.font.Font(None, self.font)
+                text_surface = f.render(obj['text'], True, self.font_color)
+                max_size[0] = max(max_size[0], int(text_surface.get_size()[0] * constants['box_size'][0]))
+                max_size[1] = max(max_size[1], int(text_surface.get_size()[1] * constants['box_size'][1]))
+            self.font = min(int(self.font * main_size[0] / max_size[0]), int(self.font * main_size[1] / max_size[1]))
+
         # add objects into list to drawing objects
         for obj in self.objects:
             if obj['type'] == 'main':
                 # add main block:
-                main = TextBox((0, 0), self.font, self.font_color, obj['text'], 'left', obj['bg_image'])
+                main = TextBox((0, 0), self.font, self.font_color, obj['text'], 'left', obj['bg_image'], size=main_size)
                 arrow = Button((main.size[0], 0), self.font, self.font_color,
                                '', 'left', self.image, (self.unlock, self.lock), size=(main.size[1], main.size[1]))
                 self.drawing_objects.append(main)
@@ -266,6 +278,73 @@ class Drop_Down:
                             0] / 2 and abs(
                             event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= obj.size[1] / 2:
                             start_game(obj)
+
+
+class Drop_Down_List:
+    def __init__(self, position, image, font, font_color, objects, constants):
+        """
+
+        :param position: pos of left high corner of main block
+        :param image: image of arrow
+        :param font: font of text
+        :param font_color: colour of text
+        :param objects: [[{'text':'', 'type':main/not_main, 'func':func, 'bg_image':bg_image},...],...,]
+        :param constants: constants of game like screen or file with data
+        """
+        self.position = position
+        self.image = image
+        self.font = font
+        self.font_color = font_color
+        self.objects = objects
+        self.constants = constants
+        self.drop_down_lists = []
+        # count max size of objects:
+        max_size = [0, 0]
+        for arr in self.objects:
+            for obj in arr:
+                f = pygame.font.Font(None, self.font)
+                text_surface = f.render(obj['text'], True, self.font_color)
+                max_size[0] = max(max_size[0], int(text_surface.get_size()[0] * constants['box_size'][0]))
+                max_size[1] = max(max_size[1], int(text_surface.get_size()[1] * constants['box_size'][1]))
+        # add objects in working form:
+        for obj in self.objects:
+            drop_down = Drop_Down((self.position[0], self.position[1] + self.objects.index(obj) * max_size[1]),
+                                  self.image, self.font, self.font_color, obj, self.constants, main_size=max_size)
+            self.drop_down_lists.append(drop_down)
+
+        self.size = (self.drop_down_lists[0].size[0], max_size[1] * 9)
+
+    def get_surface(self):
+        """
+        draw objects
+        :return: surface with pictures of objects
+        """
+        surface = pygame.Surface(self.size, pygame.SRCALPHA, 32)
+        for obj in self.drop_down_lists:
+            surf = obj.get_surface()
+            surface.blit(surf, (obj.position[0] - self.position[0], obj.position[1] - self.position[1]))
+        return surface
+
+    def click(self, event):
+        """
+        react to events
+        :param event: pygame Event
+        :return: None
+        """
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for obj in self.drop_down_lists:
+                status = obj.opened
+                obj.click(event)
+                # if close some drop down:
+                if status and not obj.opened:
+                    for elem in self.drop_down_lists[self.drop_down_lists.index(obj) + 1:]:
+                        elem.position = (
+                            elem.position[0], elem.position[1] - len(obj.additional_objects) * obj.main.size[1])
+                # if open some drop down:
+                if not status and obj.opened:
+                    for elem in self.drop_down_lists[self.drop_down_lists.index(obj) + 1:]:
+                        elem.position = (
+                            elem.position[0], elem.position[1] + len(obj.additional_objects) * obj.main.size[1])
 
 
 class System:
@@ -391,12 +470,18 @@ class System:
 
     def start(self):
         map_pool = [{}]
-        objects = [
+        objects = [[
             {'text': 'Woooow', 'type': 'main', 'func': print(3), 'bg_image': os.path.join(self.folder, 'box.jpg')},
             {'text': 'Utoun', 'type': 'not_main', 'func': print(32), 'bg_image': os.path.join(self.folder, 'box.jpg')},
-            {'text': 'Ybdvkjn', 'type': 'not_main', 'func': print(332),
-             'bg_image': os.path.join(self.folder, 'box.jpg')}]
-        map = Drop_Down((100, 100), os.path.join(self.folder, 'arrow.png'), 100, 'black', objects, self.constants)
+            {'text': 'Ybdvjn', 'type': 'not_main', 'func': print(2), 'bg_image': os.path.join(self.folder, 'box.jpg')}],
+            [
+                {'text': 'Main2', 'type': 'main', 'func': print(3), 'bg_image': os.path.join(self.folder, 'box.jpg')},
+                {'text': 'UBcbun', 'type': 'not_main', 'func': print(32),
+                 'bg_image': os.path.join(self.folder, 'box.jpg')},
+                {'text': 'Ecplpc', 'type': 'not_main', 'func': print(2),
+                 'bg_image': os.path.join(self.folder, 'box.jpg')}]
+        ]
+        map = Drop_Down_List((100, 100), os.path.join(self.folder, 'arrow.png'), 100, 'black', objects, self.constants)
         self.objects = [map]
         pass
 

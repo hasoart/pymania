@@ -32,6 +32,9 @@
     "offset_value": [-0.5, 3],
     "slider_value": 0.3
   },
+  "start": {
+    "indent": 0.17
+  },
   "box_size": [1.2, 1.2],
   "circle_size": 1.3,
   "font": 50

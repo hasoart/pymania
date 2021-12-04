@@ -3,7 +3,7 @@ import pygame
 import os
 import pathlib
 import json
-import audioplayer
+from beatmap_parser import *
 
 pygame.font.init()
 pygame.mixer.init()
@@ -11,7 +11,7 @@ pygame.mixer.init()
 
 class TextBox:
     # class textbox
-    def __init__(self, position, font, font_color, text, aligment, bg_image=None, box_size=[1.2, 1.2]):
+    def __init__(self, position, font, font_color, text, aligment, bg_image=None, box_size=[1.2, 1.2], size=None):
         """
         init for class Textbox
         position - cords of left high corner or center
@@ -22,6 +22,7 @@ class TextBox:
                    'left': position - cords of left high corner
         bg_image - image in background of text
         box_size - ratio of the size of rect to size of text
+        size - size of textbox
         """
         self.position = position
         self.bg_image = bg_image
@@ -31,8 +32,12 @@ class TextBox:
         self.aligment = aligment
         f = pygame.font.Font(None, self.font)
         text_surface = f.render(self.text, True, self.font_color)
-        # count size based on size of text:
-        self.size = (int(text_surface.get_width() * box_size[0]), int(text_surface.get_height() * box_size[1]))
+
+        if size:
+            self.size = size
+        else:
+            # count size based on size of text:
+            self.size = (int(text_surface.get_width() * box_size[0]), int(text_surface.get_height() * box_size[1]))
         if self.aligment == 'center':
             self.position = [self.position[0] - self.size[0] / 2, self.position[1] - self.size[1] / 2]
         # get background surface
@@ -59,7 +64,7 @@ class TextBox:
 
 
 class Button(TextBox):
-    def __init__(self, position, font, font_color, text, aligment, bg_image, func, box_size=[1.2, 1.2]):
+    def __init__(self, position, font, font_color, text, aligment, bg_image, func, box_size=[1.2, 1.2], size=None):
         """
         init for class Button
         position - cords of left high corner or center
@@ -71,8 +76,9 @@ class Button(TextBox):
         bg_image - image in background of text
         func - what to do if button is clicked
         box_size - ratio of the size of rect to size of text
+        size - size of Button
         """
-        super().__init__(position, font, font_color, text, aligment, bg_image, box_size)
+        super().__init__(position, font, font_color, text, aligment, bg_image, box_size, size)
         self.func = func
 
     def click(self, event):
@@ -180,6 +186,88 @@ class Slider:
             self.condition = False
 
 
+class Drop_Down:
+    def __init__(self, position, image, font, font_color, objects, constants):
+        """
+        :param position:
+        :param image:
+        :param font:
+        :param font_color:
+        :param objects: [{'text':'', 'type':main/not_main, 'func':func, 'bg_image':bg_image},...,]
+        """
+        self.position = position
+        self.image = image
+        self.font = font
+        self.font_color = font_color
+        self.objects = objects
+        self.drawing_objects = []
+        self.size = ()
+        self.additional_objects = []
+        self.constants = constants
+        # add objects into list to drawing objects
+        for obj in self.objects:
+            if obj['type'] == 'main':
+                # add main block:
+                main = TextBox((0, 0), self.font, self.font_color, obj['text'], 'left', obj['bg_image'])
+                arrow = Button((main.size[0], 0), self.font, self.font_color,
+                               '', 'left', self.image, (self.unlock, self.lock), size=(main.size[1], main.size[1]))
+                self.drawing_objects.append(main)
+                self.drawing_objects.append(arrow)
+                self.arrow = arrow
+                self.main = main
+            else:
+                # add not main blocks
+                button = Button(
+                    (int((self.main.size[0] + self.arrow.size[0]) * self.constants['start']['indent']),
+                     self.main.size[1] * (len(self.additional_objects) + 1)),
+                    self.font, self.font_color, obj['text'], 'left', obj['bg_image'], self.click,
+                    size=(int((self.main.size[0] + self.arrow.size[0]) * (1 - self.constants['start']['indent'])),
+                          self.main.size[1]))
+                self.additional_objects.append(button)
+        self.opened = False
+        self.size = (self.main.size[0] + self.arrow.size[0], self.main.size[1] * len(self.objects))
+
+    def unlock(self):
+        """ when list is close and became into opened:"""
+        self.drawing_objects += self.additional_objects
+
+    def lock(self):
+        """when list is opened and became into close"""
+        self.drawing_objects = [self.main, self.arrow]
+
+    def get_surface(self):
+        """draw objects:"""
+        surface = pygame.Surface(self.size, pygame.SRCALPHA, 32)
+        for obj in self.drawing_objects:
+            surface.blit(obj.get_surface(), obj.position)
+        return surface
+
+    def click(self, event):
+        """
+        react to events
+        :param event - event pygame"""
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if abs(event.pos[0] - self.position[0] - self.arrow.position[0] - self.arrow.size[0] / 2) <= \
+                    self.arrow.size[1] / 2 and \
+                    abs(event.pos[1] - self.position[1] - self.arrow.position[1] - self.arrow.size[1] / 2) <= \
+                    self.arrow.size[1] / 2:
+                # events with clicking arrow:
+                if not self.opened:
+                    self.arrow.func[0]()
+                    self.opened = True
+                else:
+                    self.arrow.func[1]()
+                    self.opened = False
+            else:
+                # events with clicking into blocks:
+                if self.opened:
+                    for obj in self.additional_objects:
+                        if abs(event.pos[0] - self.position[0] - obj.position[0] - obj.size[0] / 2) <= obj.size[
+                            0] / 2 and abs(
+                            event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= obj.size[1] / 2:
+                            start_game(obj)
+
+
 class System:
     # class that have all parametries of during menu-pack
     def __init__(self, bg_image, screen, volume=0.5, dim=0.5, blur=0.5, offset=0.5, FPS=30):
@@ -188,8 +276,8 @@ class System:
         bg_image - image of background screen
         screen - screen where draw
         volume - volume of sound
-        dim - characterist of sound
-        blur - characterist of sound
+        dim - characteristic of sound
+        blur - characteristic of sound
         offset - contacting sound and picture
         FPS - fotos per second
         """
@@ -237,7 +325,8 @@ class System:
             self.constants['colors']['button'], 'Settings', 'center', os.path.join(folder, 'rect.png'), self.settings,
             box_size)
         start = Button((w * const['start'][0], h * const['start'][1]), font,
-                       self.constants['colors']['button'], 'Start', 'center', os.path.join(folder, 'rect.png'), fun2,
+                       self.constants['colors']['button'], 'Start', 'center', os.path.join(folder, 'rect.png'),
+                       self.start,
                        box_size)
         exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
                       self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'), fun3,
@@ -300,6 +389,17 @@ class System:
         settings = {'channel': pygame.mixer.Channel(1), 'sound': pygame.mixer.Sound(self.bg_sound)}
         self.music.append(settings)
 
+    def start(self):
+        map_pool = [{}]
+        objects = [
+            {'text': 'Woooow', 'type': 'main', 'func': print(3), 'bg_image': os.path.join(self.folder, 'box.jpg')},
+            {'text': 'Utoun', 'type': 'not_main', 'func': print(32), 'bg_image': os.path.join(self.folder, 'box.jpg')},
+            {'text': 'Ybdvkjn', 'type': 'not_main', 'func': print(332),
+             'bg_image': os.path.join(self.folder, 'box.jpg')}]
+        map = Drop_Down((100, 100), os.path.join(self.folder, 'arrow.png'), 100, 'black', objects, self.constants)
+        self.objects = [map]
+        pass
+
     def play(self):
         # start menu-window
         FPS = self.FPS
@@ -322,8 +422,8 @@ class System:
             if len(self.music) == 2:
                 self.music[0]['channel'].stop()
                 self.music.pop(0)
-            if not self.music[0]['channel'].get_busy():
-                self.music[0]['channel'].play(self.music[0]['sound'])
+            # if not self.music[0]['channel'].get_busy():
+            # self.music[0]['channel'].play(self.music[0]['sound'])
             self.music[0]['channel'].set_volume(self.sets['volume'])
             pygame.mixer.music.set_volume(self.sets['volume'])
 
@@ -334,16 +434,13 @@ class System:
             pygame.display.update()
 
 
-def fun2(obj):
-    # example function
-    print('start')
-    obj.bg_image = 'pin.jpg'
+def start_game(obj):
+    print(obj.text)
 
 
-def fun3(obj):
+def fun3():
     # example function
     print('exit')
-    obj.bg_image = 'pin.jpg'
 
 
 # make system

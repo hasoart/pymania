@@ -3,7 +3,6 @@ import pygame
 import os
 import pathlib
 import json
-from beatmap_parser import *
 
 pygame.font.init()
 pygame.mixer.init()
@@ -11,7 +10,7 @@ pygame.mixer.init()
 
 class TextBox:
     # class textbox
-    def __init__(self, position, font, font_color, text, aligment, bg_image=None, box_size=[1.2, 1.2], size=None):
+    def __init__(self, position, font, font_color, text, aligment, bg_image=None, box_size=(1.2, 1.2), size=None):
         """
         init for class Textbox
         position - cords of left high corner or center
@@ -64,7 +63,7 @@ class TextBox:
 
 
 class Button(TextBox):
-    def __init__(self, position, font, font_color, text, aligment, bg_image, func, box_size=[1.2, 1.2], size=None):
+    def __init__(self, position, font, font_color, text, aligment, bg_image, func, box_size=(1.2, 1.2), size=None):
         """
         init for class Button
         position - cords of left high corner or center
@@ -275,8 +274,8 @@ class Drop_Down:
                 if self.opened:
                     for obj in self.additional_objects:
                         if abs(event.pos[0] - self.position[0] - obj.position[0] - obj.size[0] / 2) <= obj.size[
-                            0] / 2 and abs(
-                            event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= obj.size[1] / 2:
+                            0] / 2 and abs(event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= \
+                                obj.size[1] / 2:
                             start_game(obj)
 
 
@@ -379,6 +378,7 @@ class System:
         self.start_time = pygame.time.get_ticks()
         self.bg_sound = os.path.join(self.folder, 'menu.mp3')
         self.music = []
+        self.place = None
 
     def set(self, name, value):
         # set some parametres of game
@@ -387,6 +387,7 @@ class System:
     def menu(self):
         # open menu
         # read constants from file:
+        self.place = self.menu
         screen = self.screen
         w = screen.get_width()
         h = screen.get_height()
@@ -401,19 +402,19 @@ class System:
                        os.path.join(folder, 'box.jpg'), box_size)
         setting = Button(
             (w * const['settings'][0], h * const['settings'][1]), font,
-            self.constants['colors']['button'], 'Settings', 'center', os.path.join(folder, 'rect.png'), self.settings,
-            box_size)
+            self.constants['colors']['button'], 'Settings', 'center', os.path.join(folder, 'rect.png'),
+            self.settings, box_size)
         start = Button((w * const['start'][0], h * const['start'][1]), font,
                        self.constants['colors']['button'], 'Start', 'center', os.path.join(folder, 'rect.png'),
-                       self.start,
-                       box_size)
+                       self.start, box_size)
         exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
-                      self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'), fun3,
+                      self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'),
+                      self.exit_screensaver,
                       box_size)
         self.objects = [menu, setting, start, exit]
         self.bg_sound = os.path.join(self.folder, 'menu.mp3')
-        Menu = {'channel': pygame.mixer.Channel(0), 'sound': pygame.mixer.Sound(self.bg_sound)}
-        self.music.append(Menu)
+        menu = {'channel': pygame.mixer.Channel(0), 'sound': pygame.mixer.Sound(self.bg_sound)}
+        self.music.append(menu)
 
     def settings(self):
         # open settings-menu
@@ -459,17 +460,25 @@ class System:
                                os.path.join(folder, 'circle.png'), color_on, color_off,
                                (w * const['offset_slider_size'][0], h * const['offset_slider_size'][1]), self, 'offset',
                                font, self.constants['colors']['textbox'], self.sets['offset'], circle_size)
+
         exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
-                      self.constants['colors']['button'], 'Back', 'left', os.path.join(folder, 'rect.png'), self.menu,
+                      self.constants['colors']['button'], 'Back', 'left', os.path.join(folder, 'rect.png'), self.place,
                       box_size)
         self.objects = [menu_box, volume, bg_dim, bg_blur, offset, volume_slider, dim_slider, blur_slider,
                         offset_slider, exit]
         self.bg_sound = os.path.join(self.folder, 'settings.mp3')
         settings = {'channel': pygame.mixer.Channel(1), 'sound': pygame.mixer.Sound(self.bg_sound)}
         self.music.append(settings)
+        self.place = self.settings
 
     def start(self):
         map_pool = [{}]
+        screen = self.screen
+        self.place = self.start
+        w = screen.get_width()
+        h = screen.get_height()
+        folder = self.folder
+        const = self.constants['start']
         objects = [[
             {'text': 'Woooow', 'type': 'main', 'func': print(3), 'bg_image': os.path.join(self.folder, 'box.jpg')},
             {'text': 'Utoun', 'type': 'not_main', 'func': print(32), 'bg_image': os.path.join(self.folder, 'box.jpg')},
@@ -481,9 +490,14 @@ class System:
                 {'text': 'Ecplpc', 'type': 'not_main', 'func': print(2),
                  'bg_image': os.path.join(self.folder, 'box.jpg')}]
         ]
-        map = Drop_Down_List((100, 100), os.path.join(self.folder, 'arrow.png'), 100, 'black', objects, self.constants)
-        self.objects = [map]
-        pass
+        map = Drop_Down_List((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
+                             os.path.join(self.folder, 'arrow.png'), self.constants['font'],
+                             'black', objects, self.constants)
+        setting = Button(
+            (w * const['settings'][0], h * const['settings'][1]), self.constants['font'],
+            self.constants['colors']['button'], '', 'center', os.path.join(folder, 'settings.png'), self.settings,
+            self.constants['box_size'], (int(w * const['settings_size'][0]), int(h * const['settings_size'][1])))
+        self.objects = [map, setting]
 
     def play(self):
         # start menu-window
@@ -518,14 +532,15 @@ class System:
 
             pygame.display.update()
 
+    def start_screensaver(self):
+        print('start')
+
+    def exit_screensaver(self):
+        print('exit')
+
 
 def start_game(obj):
     print(obj.text)
-
-
-def fun3():
-    # example function
-    print('exit')
 
 
 # make system

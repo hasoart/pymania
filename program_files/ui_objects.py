@@ -3,6 +3,7 @@ import pygame
 import os
 import pathlib
 import json
+from GameMaster import GameMaster
 
 pygame.font.init()
 pygame.mixer.init()
@@ -185,8 +186,8 @@ class Slider:
             self.condition = False
 
 
-class Drop_Down:
-    def __init__(self, position, image, font, font_color, objects, constants, main_size=None):
+class DropDown:
+    def __init__(self, position, image, font, font_color, objects, constants, screen, main_size=None):
         """
         :param position: pos of left high corner of main block
         :param image: image of arrow
@@ -204,6 +205,7 @@ class Drop_Down:
         self.size = ()
         self.additional_objects = []
         self.constants = constants
+        self.screen = screen
 
         # count font of text if main_size:
         max_size = [0, 0]
@@ -276,11 +278,11 @@ class Drop_Down:
                         if abs(event.pos[0] - self.position[0] - obj.position[0] - obj.size[0] / 2) <= obj.size[
                             0] / 2 and abs(event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= \
                                 obj.size[1] / 2:
-                            start_game(obj)
+                            start_game(obj, self.screen)
 
 
-class Drop_Down_List:
-    def __init__(self, position, image, font, font_color, objects, constants):
+class DropDownList:
+    def __init__(self, position, image, font, font_color, objects, constants, screen):
         """
 
         :param position: pos of left high corner of main block
@@ -297,6 +299,7 @@ class Drop_Down_List:
         self.objects = objects
         self.constants = constants
         self.drop_down_lists = []
+        self.screen = screen
         # count max size of objects:
         max_size = [0, 0]
         for arr in self.objects:
@@ -307,8 +310,9 @@ class Drop_Down_List:
                 max_size[1] = max(max_size[1], int(text_surface.get_size()[1] * constants['box_size'][1]))
         # add objects in working form:
         for obj in self.objects:
-            drop_down = Drop_Down((self.position[0], self.position[1] + self.objects.index(obj) * max_size[1]),
-                                  self.image, self.font, self.font_color, obj, self.constants, main_size=max_size)
+            drop_down = DropDown((self.position[0], self.position[1] + self.objects.index(obj) * max_size[1]),
+                                 self.image, self.font, self.font_color, obj, self.constants, self.screen,
+            main_size = max_size)
             self.drop_down_lists.append(drop_down)
 
         self.size = (self.drop_down_lists[0].size[0], max_size[1] * 9)
@@ -348,7 +352,7 @@ class Drop_Down_List:
 
 class System:
     # class that have all parametries of during menu-pack
-    def __init__(self, bg_image, screen, volume=0.5, dim=0.5, blur=0.5, offset=0.5, FPS=30):
+    def __init__(self, bg_image, volume=0.5, dim=0.5, blur=0.5, offset=0.5):
         """
         init for class System
         bg_image - image of background screen
@@ -359,11 +363,13 @@ class System:
         offset - contacting sound and picture
         FPS - fotos per second
         """
+        with open('game_config.json', 'r') as f:
+            sets = json.load(f)
+        self.screen = pygame.display.set_mode((sets['width'], sets['height']))
+        self.FPS = sets['FPS']
         self.sets = {'volume': volume, 'dim': dim, 'blur': blur, 'offset': offset}
-        self.screen = screen
         self.bg_image = bg_image
         self.objects = []
-        self.FPS = FPS
         # open file of pictures:
         full_path = os.path.abspath(os.curdir)
         folder = os.path.join(pathlib.Path(full_path).parents[0], 'assets')
@@ -407,11 +413,11 @@ class System:
         start = Button((w * const['start'][0], h * const['start'][1]), font,
                        self.constants['colors']['button'], 'Start', 'center', os.path.join(folder, 'rect.png'),
                        self.start, box_size)
-        exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
-                      self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'),
-                      self.exit_screensaver,
-                      box_size)
-        self.objects = [menu, setting, start, exit]
+        _exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
+                       self.constants['colors']['button'], 'Exit', 'center', os.path.join(folder, 'rect.png'),
+                       self.exit_screensaver,
+                       box_size)
+        self.objects = [menu, setting, start, _exit]
         self.bg_sound = os.path.join(self.folder, 'menu.mp3')
         menu = {'channel': pygame.mixer.Channel(0), 'sound': pygame.mixer.Sound(self.bg_sound)}
         self.music.append(menu)
@@ -461,11 +467,11 @@ class System:
                                (w * const['offset_slider_size'][0], h * const['offset_slider_size'][1]), self, 'offset',
                                font, self.constants['colors']['textbox'], self.sets['offset'], circle_size)
 
-        exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
-                      self.constants['colors']['button'], 'Back', 'left', os.path.join(folder, 'rect.png'), self.place,
-                      box_size)
+        _exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
+                       self.constants['colors']['button'], 'Back', 'left', os.path.join(folder, 'rect.png'), self.place,
+                       box_size)
         self.objects = [menu_box, volume, bg_dim, bg_blur, offset, volume_slider, dim_slider, blur_slider,
-                        offset_slider, exit]
+                        offset_slider, _exit]
         self.bg_sound = os.path.join(self.folder, 'settings.mp3')
         settings = {'channel': pygame.mixer.Channel(1), 'sound': pygame.mixer.Sound(self.bg_sound)}
         self.music.append(settings)
@@ -490,14 +496,14 @@ class System:
                 {'text': 'Ecplpc', 'type': 'not_main', 'func': print(2),
                  'bg_image': os.path.join(self.folder, 'box.jpg')}]
         ]
-        map = Drop_Down_List((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
-                             os.path.join(self.folder, 'arrow.png'), self.constants['font'],
-                             'black', objects, self.constants)
+        _map = DropDownList((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
+                            os.path.join(self.folder, 'arrow.png'), self.constants['font'],
+                            'black', objects, self.constants, screen)
         setting = Button(
             (w * const['settings'][0], h * const['settings'][1]), self.constants['font'],
             self.constants['colors']['button'], '', 'center', os.path.join(folder, 'settings.png'), self.settings,
             self.constants['box_size'], (int(w * const['settings_size'][0]), int(h * const['settings_size'][1])))
-        self.objects = [map, setting]
+        self.objects = [_map, setting]
 
     def play(self):
         # start menu-window
@@ -539,14 +545,19 @@ class System:
         print('exit')
 
 
-def start_game(obj):
-    print(obj.text)
+def start_game(obj, screen):
+    difficulties = [i for i in
+                    os.listdir('../Beatmaps/' + os.listdir('../Beatmaps/')[0])
+                    if i.endswith('.osu')]
+    game = GameMaster(screen, '../Beatmaps/' + os.listdir('../Beatmaps/')[0],
+                      difficulties[0])
+    game.start()
 
 
 # make system
 
-screen = pygame.display.set_mode((900, 600))
-system = System('bg.jpg', screen)
+
+system = System('bg.jpg')
 system.play()
 
 pygame.quit()

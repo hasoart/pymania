@@ -121,7 +121,7 @@ def get_beatmaps(beatmaps_folder):
     """
 
     :param beatmaps_folder: Папка с картами
-    :return: Словарик с данными всех карт для отрисовки меню
+    :return: Список со словариками с данными всех карт для отрисовки меню
     'beatmap_directory' - путь папки карты
     'artist' - Исполнитель песни
     'title' - название песни
@@ -159,5 +159,6 @@ def get_beatmaps(beatmaps_folder):
             difficulty = metadata['Version']
             map_dict['diffs'].append({difficulty: beatmap})
 
-        return map_dict
+        beatmaps_list.append(map_dict)
 
+    return beatmaps_list

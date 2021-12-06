@@ -1,6 +1,6 @@
 {
-    "width": 1600,
-    "height": 900,
+    "width": 1400,
+    "height": 700,
     "FPS": 300,
     "Beatmaps_directory": "../Beatmaps",
     "track_width": 100,
@@ -11,5 +11,9 @@
     "track_color": [209, 209, 209],
     "note_color": [[204, 51, 153], [153, 51, 102]],
     "hold_color": [[204, 102, 153], [153, 51, 102]],
-    "key_color": [[255, 80, 80], [255, 153, 153]]
+    "key_color": [[255, 80, 80], [255, 153, 153]],
+    "volume": 0.5,
+    "dim": 0.5,
+    "blur": 0.5,
+    "offset": 0.5
 }

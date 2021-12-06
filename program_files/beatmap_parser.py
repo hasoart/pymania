@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 
 def parse_hitobject(track_count, s):
@@ -114,4 +115,49 @@ def get_hitobjects(file):
         hitobjects = np.array(list(map(lambda x: parse_hitobject(track_count, x), data[i:])), dtype=object)
 
         return hitobjects
+
+
+def get_beatmaps(beatmaps_folder):
+    """
+
+    :param beatmaps_folder: Папка с картами
+    :return: Словарик с данными всех карт для отрисовки меню
+    'beatmap_directory' - путь папки карты
+    'artist' - Исполнитель песни
+    'title' - название песни
+    'music_path' - относительный путь до файла музыки
+    'bg_image' - относительный путь до фонового изображения
+    'diffs' - список с словариками вида {название сложности: название файла карты}
+    """
+    map_list = os.listdir(beatmaps_folder)
+    beatmaps_list = []
+
+    for map_ in map_list:
+        map_dict = dict()
+
+        map_directory = os.path.join(beatmaps_folder, map_)
+        map_dict["beatmap_directory"] = map_directory
+
+        beatmaps = [i for i in os.listdir(map_directory) if i.endswith('.osu')]
+
+        if not beatmaps:
+            continue
+
+        metadata = get_metadata(os.path.join(map_directory, beatmaps[0]))
+
+        map_dict['artist'] = metadata['Artist']
+        map_dict['title'] = metadata['Title']
+
+        map_dict['music_path'] = os.path.join(map_directory, metadata['AudioFilename'])
+        map_dict['bg_image'] = os.path.join(map_directory, metadata['Background'])
+
+        map_dict['diffs'] = []
+
+        for beatmap in beatmaps:
+            beatmap_path = os.path.join(map_directory, beatmap)
+            metadata = get_metadata(beatmap_path)
+            difficulty = metadata['Version']
+            map_dict['diffs'].append({difficulty: beatmap})
+
+        return map_dict
 

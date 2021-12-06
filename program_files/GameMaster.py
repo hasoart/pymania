@@ -30,8 +30,14 @@ class ScoreMaster:
     def get_combo(self):
         return self.combo
 
+    def get_max_combo(self):
+        return self.max_combo
+
+    def get_score(self):
+        return self.score
+
     def get_accuracy(self):
-        return sum(self.score_list) / (300 * len(self.score_list)) if self.score_list else 1
+        return 100 * (sum(self.score_list) / (300 * len(self.score_list)) if self.score_list else 1.)
 
 
 class GameMaster:
@@ -67,7 +73,7 @@ class GameMaster:
 
         for i in range(self.track_count):
             self.tracks += [Track(i, self.settings[f'{self.track_count}k_keys'][i], self.score_master,
-                                  od=int(self.metadata['OverallDifficulty']),
+                                  od=float(self.metadata['OverallDifficulty']),
                                   hit_distance=self.game_config['hit_distance'],
                                   width=self.game_config['track_width'], height=self.height,
                                   note_height=self.game_config['note_height'], hold_width=self.game_config['hold_width'],
@@ -83,6 +89,9 @@ class GameMaster:
         else:
             self.bg_image = pg.transform.smoothscale(self.bg_image, (bg_width * self.height // bg_height, self.height))
 
+        self.big_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 70)
+        self.small_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 30)
+
     def render(self):
         x_offset = (self.width -
                     self.track_count * (self.game_config['track_width'] + self.game_config['track_spacing']) +
@@ -91,6 +100,25 @@ class GameMaster:
         for i in range(self.track_count):
             x = (self.game_config['track_width'] + self.game_config['track_spacing']) * i + x_offset
             self.tracks[i].render(self.surface, x, 0)
+
+        score_surface = self.big_font.render(f'{self.score_master.get_score()}', True, (255, 255, 255))
+        w, h = score_surface.get_size()
+        self.surface.blit(self.bg_image, (self.width - w - 20, 20), (self.width - w - 20, 20, w, h))
+        self.surface.blit(score_surface, (self.width - w - 20, 20))
+
+        accuracy_surface = self.small_font.render(f'{self.score_master.get_accuracy():.2f}%', True, (255, 255, 255))
+        max_acc_surface = self.small_font.render('100.00%', True, (255, 255, 255))
+        w1, h1 = max_acc_surface.get_size()
+        w2, h2 = accuracy_surface.get_size()
+        self.surface.blit(self.bg_image, (self.width - w1 - 20, 40 + h), (self.width - w1 - 20, 40 + h, w1, h1))
+        self.surface.blit(accuracy_surface, (self.width - w2 - 20, 40 + h))
+
+        combo_surface = self.big_font.render(f'{self.score_master.get_combo()}x', True, (255, 255, 255))
+        max_combo_surface = self.big_font.render(f'{self.score_master.get_max_combo()}x', True, (255, 255, 255))
+        w, h = max_combo_surface.get_size()[0], combo_surface.get_size()[1]
+        self.surface.blit(self.bg_image, (20, self.height - h - 20),
+                          (20, self.height - h - 20, w, h))
+        self.surface.blit(combo_surface, (20, self.height - h - 20))
 
     def start(self):
         finished = False
@@ -136,7 +164,6 @@ class GameMaster:
             self.render()
             handler.handle()
 
-            print(self.score_master.combo, self.score_master.score, self.score_master.get_accuracy())
             pg.display.update()
             clock.tick(FPS)
 

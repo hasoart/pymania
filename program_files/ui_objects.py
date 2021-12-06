@@ -4,6 +4,7 @@ import os
 import pathlib
 import json
 from GameMaster import GameMaster
+from beatmap_parser import get_beatmaps
 
 pygame.font.init()
 pygame.mixer.init()
@@ -43,7 +44,7 @@ class TextBox:
         # get background surface
         if self.bg_image:
             rect_surface = pygame.image.load(self.bg_image).convert_alpha()
-            self.rect_surface = pygame.transform.scale(rect_surface, self.size)
+            self.rect_surface = pygame.transform.smoothscale(rect_surface, self.size)
         else:
             self.rect_surface = None
 
@@ -127,7 +128,7 @@ class Slider:
         self.circle_pos = (self.position[0] + self.size[0] * self.value, self.position[1] + self.circle_size[1] / 2)
         # get surface of circle:
         self.circle_surface = pygame.image.load(self.image).convert_alpha()
-        self.circle_surface = pygame.transform.scale(self.circle_surface, self.circle_size)
+        self.circle_surface = pygame.transform.smoothscale(self.circle_surface, self.circle_size)
         self.circle_surface.set_colorkey((253, 253, 253))
 
     def set_value(self, value):
@@ -206,7 +207,7 @@ class DropDown:
         self.additional_objects = []
         self.constants = constants
         self.screen = screen
-
+        self.add_obj_func = {}
         # count font of text if main_size:
         max_size = [0, 0]
         if main_size:
@@ -237,8 +238,9 @@ class DropDown:
                     size=(int((self.main.size[0] + self.arrow.size[0]) * (1 - self.constants['start']['indent'])),
                           self.main.size[1]))
                 self.additional_objects.append(button)
-        self.opened = False
-        self.size = (self.main.size[0] + self.arrow.size[0], self.main.size[1] * len(self.objects))
+                self.add_obj_func[button] = obj
+                self.opened = False
+                self.size = (self.main.size[0] + self.arrow.size[0], self.main.size[1] * len(self.objects))
 
     def unlock(self):
         """ when list is close and became into opened:"""
@@ -278,7 +280,9 @@ class DropDown:
                         if abs(event.pos[0] - self.position[0] - obj.position[0] - obj.size[0] / 2) <= obj.size[
                             0] / 2 and abs(event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= \
                                 obj.size[1] / 2:
-                            start_game(obj, self.screen)
+                            obje = self.add_obj_func[obj]
+
+                            obje['func'][0](obje['func'][1], obje['func'][2], obje['func'][3])
 
 
 class DropDownList:
@@ -312,7 +316,7 @@ class DropDownList:
         for obj in self.objects:
             drop_down = DropDown((self.position[0], self.position[1] + self.objects.index(obj) * max_size[1]),
                                  self.image, self.font, self.font_color, obj, self.constants, self.screen,
-            main_size = max_size)
+                                 main_size=max_size)
             self.drop_down_lists.append(drop_down)
 
         self.size = (self.drop_down_lists[0].size[0], max_size[1] * 9)
@@ -380,7 +384,8 @@ class System:
         # make background surface:
         self.bg_surface = pygame.image.load(os.path.join(self.folder, self.bg_image)).convert_alpha()
         self.screen.blit(self.bg_surface, (0, 0))
-        self.bg_surface = pygame.transform.scale(self.bg_surface, (self.screen.get_width(), self.screen.get_height()))
+        self.bg_surface = pygame.transform.smoothscale(self.bg_surface,
+                                                       (self.screen.get_width(), self.screen.get_height()))
         self.start_time = pygame.time.get_ticks()
         self.bg_sound = os.path.join(self.folder, 'menu.mp3')
         self.music = []
@@ -485,24 +490,38 @@ class System:
         h = screen.get_height()
         folder = self.folder
         const = self.constants['start']
-        objects = [[
-            {'text': 'Woooow', 'type': 'main', 'func': print(3), 'bg_image': os.path.join(self.folder, 'box.jpg')},
-            {'text': 'Utoun', 'type': 'not_main', 'func': print(32), 'bg_image': os.path.join(self.folder, 'box.jpg')},
-            {'text': 'Ybdvjn', 'type': 'not_main', 'func': print(2), 'bg_image': os.path.join(self.folder, 'box.jpg')}],
-            [
-                {'text': 'Main2', 'type': 'main', 'func': print(3), 'bg_image': os.path.join(self.folder, 'box.jpg')},
-                {'text': 'UBcbun', 'type': 'not_main', 'func': print(32),
-                 'bg_image': os.path.join(self.folder, 'box.jpg')},
-                {'text': 'Ecplpc', 'type': 'not_main', 'func': print(2),
-                 'bg_image': os.path.join(self.folder, 'box.jpg')}]
-        ]
+
+        beatmap_folder = os.path.join(pathlib.Path(self.folder).parents[0], 'Beatmaps')
+        beatmaps = get_beatmaps(beatmap_folder)
+        objects = []
+        for beat_map in beatmaps:
+            song = []
+            file = {}
+            file['text'] = beat_map['title']
+            file['music'] = beat_map['music_path']
+            file['type'] = 'main'
+            file['bg_image'] = beat_map['bg_image']
+            song.append(file)
+            for dif in beat_map['diffs']:
+                file = {}
+                file['music'] = beat_map['music_path']
+                file['type'] = 'not_main'
+                file['bg_image'] = beat_map['bg_image']
+                file['text'] = str(list(dif.keys())[0])
+                diff = os.path.join(beat_map['beatmap_directory'], dif[str(list(dif.keys())[0])])
+                file['func'] = [start_game, self.screen, beat_map['beatmap_directory'], diff]
+                song.append(file)
+            objects.append(song)
+
         _map = DropDownList((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
                             os.path.join(self.folder, 'arrow.png'), self.constants['font'],
-                            'black', objects, self.constants, screen)
+                            'black', objects, self.constants, self.screen)
         setting = Button(
             (w * const['settings'][0], h * const['settings'][1]), self.constants['font'],
-            self.constants['colors']['button'], '', 'center', os.path.join(folder, 'settings.png'), self.settings,
-            self.constants['box_size'], (int(w * const['settings_size'][0]), int(h * const['settings_size'][1])))
+            self.constants['colors']['button'], '', 'center', os.path.join(folder, 'settings.png'),
+            self.settings,
+            self.constants['box_size'],
+            (int(w * const['settings_size'][0]), int(h * const['settings_size'][1])))
         self.objects = [_map, setting]
 
     def play(self):
@@ -545,12 +564,10 @@ class System:
         print('exit')
 
 
-def start_game(obj, screen):
-    difficulties = [i for i in
-                    os.listdir('../Beatmaps/' + os.listdir('../Beatmaps/')[0])
-                    if i.endswith('.osu')]
-    game = GameMaster(screen, '../Beatmaps/' + os.listdir('../Beatmaps/')[0],
-                      difficulties[0])
+def start_game(screen, beat_map, diff):
+    print(beat_map, diff)
+    game = GameMaster(screen, beat_map, diff)
+
     game.start()
 
 

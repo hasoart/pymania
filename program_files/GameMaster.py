@@ -41,16 +41,18 @@ class ScoreMaster:
 
 
 class GameMaster:
-    def __init__(self, surface, beatmap_folder, beatmap):
+    def __init__(self, surface, beatmap_folder, beatmap, volume=50):
         """
         :param surface: Поверхность игры
         :param beatmap_folder: путь директории карты
         :param beatmap: имя карты (путь относительно beatmap)
+        :param volume: громкость
         """
 
         self.surface = surface
         self.beatmap_folder = beatmap_folder
         self.beatmap = os.path.join(beatmap_folder, beatmap)
+        self.volume = volume
 
         self.metadata = get_metadata(self.beatmap)
         self.hitobjects = get_hitobjects(self.beatmap)
@@ -131,6 +133,7 @@ class GameMaster:
 
         song = os.path.join(self.beatmap_folder, self.metadata['AudioFilename'])
         player = audioplayer.AudioPlayer(song)
+        player.volume = self.volume
 
         render_start = 0
 

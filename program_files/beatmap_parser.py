@@ -128,6 +128,7 @@ def get_beatmaps(beatmaps_folder):
     'music_path' - относительный путь до файла музыки
     'bg_image' - относительный путь до фонового изображения
     'diffs' - список с словариками вида {название сложности: название файла карты}
+    'preview' - милисекунды старта музыки для превью
     """
     map_list = os.listdir(beatmaps_folder)
     beatmaps_list = []
@@ -147,6 +148,7 @@ def get_beatmaps(beatmaps_folder):
 
         map_dict['artist'] = metadata['Artist']
         map_dict['title'] = metadata['Title']
+        map_dict['preview'] = metadata['PreviewTime']
 
         map_dict['music_path'] = os.path.join(map_directory, metadata['AudioFilename'])
         map_dict['bg_image'] = os.path.join(map_directory, metadata['Background'])

@@ -188,7 +188,7 @@ class Slider:
 
 
 class DropDown:
-    def __init__(self, position, image, font, font_color, objects, constants, system, main_size=None):
+    def __init__(self, position, image, font, font_color, objects, constants, system, rect_pos, main_size=None):
         """
         :param position: pos of left high corner of main block
         :param image: image of arrow
@@ -196,6 +196,9 @@ class DropDown:
         :param font_color: colour of text
         :param objects: [{'text':'', 'type':main/not_main, 'func':func, 'bg_image':bg_image},...,]
         :param constants: constants of game like screen or file with data
+        :param system: system of current game
+        :param rect_pos: position of left corner of opening rectangle with inforation about song
+        :param main_size: size of one block
         """
         self.position = position
         self.image = image
@@ -208,10 +211,12 @@ class DropDown:
         self.constants = constants
         self.system = system
         self.screen = self.system.screen
+        self.rect_pos = rect_pos
         self.add_obj_func = {}
         # count font of text if main_size:
         max_size = [0, 0]
         if main_size:
+            # change font if no freedom space
             for obj in self.objects:
                 f = pygame.font.Font(None, self.font)
                 text_surface = f.render(obj['text'], True, self.font_color)
@@ -230,6 +235,7 @@ class DropDown:
                 self.drawing_objects.append(arrow)
                 self.arrow = arrow
                 self.main = main
+                self.main_obj = obj
             else:
                 # add not main blocks
                 button = Button(
@@ -247,20 +253,20 @@ class DropDown:
         """ when list is close and became into opened:"""
         self.drawing_objects += self.additional_objects
         constants = self.system.constants['drop_down']
-
+        # add rectangle with information about current song:
         name = TextBox(
-            (constants['place_image'] * self.system.screen.get_width(), self.position[1]),
-            self.font, self.font_color, 'Title: ', 'left', self.main.bg_image,
+            self.rect_pos,
+            self.font, self.font_color, 'Title: ' + self.main_obj['title'], 'left', self.main.bg_image,
             size=(int(constants['title_size'][0] * self.system.screen.get_width()),
                   int(constants['title_size'][1] * self.system.screen.get_height())))
         artist = TextBox(
-            (constants['place_image'] * self.system.screen.get_width(), self.position[1] + name.size[1]),
-            self.font, self.font_color, 'Artist: ', 'left', self.main.bg_image,
+            (self.rect_pos[0], self.rect_pos[1] + name.size[1]),
+            self.font, self.font_color, 'Artist: ' + self.main_obj['artist'], 'left', self.main.bg_image,
             size=(int(constants['title_size'][0] * self.system.screen.get_width()),
                   int(constants['title_size'][1] * self.system.screen.get_height())))
         rect = TextBox(
-            (constants['place_image'] * self.system.screen.get_width(), self.position[1] + name.size[1] + artist.size[1]),
-            self.font, self.font_color, 'dhvbsjdvbskdjv', 'left', self.main.bg_image,
+            (self.rect_pos[0], self.rect_pos[1] + name.size[1] + artist.size[1]),
+            self.font, self.font_color, '', 'left', self.main.bg_image,
             size=(int(constants['size_image'][0] * self.system.screen.get_width()),
                   int(constants['size_image'][1] * self.system.screen.get_height())))
         self.rect = [name, artist, rect]
@@ -268,6 +274,7 @@ class DropDown:
 
     def lock(self):
         """when list is opened and became into close"""
+        self.opened = False
         self.drawing_objects = [self.main, self.arrow]
         for obj in self.rect:
             self.system.objects.remove(obj)
@@ -312,7 +319,6 @@ class DropDown:
 class DropDownList:
     def __init__(self, position, image, font, font_color, objects, constants, system, music):
         """
-
         :param position: pos of left high corner of main block
         :param image: image of arrow
         :param font: font of text
@@ -334,6 +340,7 @@ class DropDownList:
         self.screen = self.system.screen
         # count max size of objects:
         max_size = [0, 0]
+        # change font if no freedom space:
         for arr in self.objects:
             for obj in arr:
                 f = pygame.font.Font(None, self.font)
@@ -344,6 +351,7 @@ class DropDownList:
         for obj in self.objects:
             drop_down = DropDown((self.position[0], self.position[1] + self.objects.index(obj) * max_size[1]),
                                  self.image, self.font, self.font_color, obj, self.constants, self.system,
+                                 (self.position[0] * self.constants['drop_down']['place_image'], self.position[1]),
                                  main_size=max_size)
             self.drop_down_lists.append(drop_down)
 
@@ -369,6 +377,7 @@ class DropDownList:
         if event.type == pygame.MOUSEBUTTONDOWN:
             for obj in self.drop_down_lists:
                 status = obj.opened
+                # play music:
                 buzy = pygame.mixer.music.get_busy()
                 pygame.mixer.music.pause()
                 if not obj.click(event) and buzy:
@@ -382,9 +391,21 @@ class DropDownList:
 
                 # if open some drop down:
                 if not status and obj.opened:
+                    # close others opened drop_down lists and move smth if it needed:
+                    for elem in self.drop_down_lists:
+                        if elem != obj:
+                            if elem.opened:
+                                elem.lock()
+                                elem.opened = False
+                                for element in self.drop_down_lists[self.drop_down_lists.index(elem) + 1:]:
+                                    element.position = (element.position[0],
+                                                        element.position[1] - len(elem.additional_objects) *
+                                                        elem.main.size[1])
+                    # move drop_downs if smth opened:
                     for elem in self.drop_down_lists[self.drop_down_lists.index(obj) + 1:]:
                         elem.position = (
                             elem.position[0], elem.position[1] + len(obj.additional_objects) * obj.main.size[1])
+                    # play music:
                     for elem in self.objects:
                         if elem == obj.objects:
                             pygame.mixer.music.stop()
@@ -399,12 +420,10 @@ class System:
         """
         init for class System
         bg_image - image of background screen
-        screen - screen where draw
         volume - volume of sound
         dim - characteristic of sound
         blur - characteristic of sound
         offset - contacting sound and picture
-        FPS - fotos per second
         """
         with open('game_config.json', 'r') as f:
             sets = json.load(f)
@@ -425,7 +444,6 @@ class System:
         self.screen.blit(self.bg_surface, (0, 0))
         self.bg_surface = pygame.transform.smoothscale(self.bg_surface,
                                                        (self.screen.get_width(), self.screen.get_height()))
-        self.start_time = pygame.time.get_ticks()
         self.bg_sound = os.path.join(self.folder, 'song.mp3')
         self.place = None
         self.finished = False
@@ -522,14 +540,16 @@ class System:
         h = screen.get_height()
         folder = self.folder
         const = self.constants['start']
-
+        # take information about tracks into files:
         beatmap_folder = os.path.join(pathlib.Path(self.folder).parents[0], 'Beatmaps')
         beatmaps = get_beatmaps(beatmap_folder)
         objects = []
+        # add songs into drop_down format:
         for beat_map in beatmaps:
             song = []
             file = {'text': beat_map['title'], 'music': beat_map['music_path'], 'type': 'main',
-                    'bg_image': beat_map['bg_image'], 'preview': beat_map['preview']}
+                    'bg_image': beat_map['bg_image'], 'preview': beat_map['preview'], 'title': beat_map['title'],
+                    'artist': beat_map['artist']}
             song.append(file)
             for dif in beat_map['diffs']:
                 file = {'music': beat_map['music_path'], 'type': 'not_main', 'bg_image': beat_map['bg_image'],
@@ -542,6 +562,7 @@ class System:
         _map = DropDownList((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
                             os.path.join(self.folder, 'arrow.png'), self.constants['font'],
                             'black', objects, self.constants, self, os.path.join(self.folder, 'arrow.png'))
+        # add button:
         setting = Button(
             (w * const['settings'][0], h * const['settings'][1]), self.constants['font'],
             self.constants['colors']['button'], '', 'center', os.path.join(folder, 'settings.png'),
@@ -573,6 +594,7 @@ class System:
                 pygame.mixer.music.play()
             pygame.mixer.music.set_volume(self.sets['volume'])
 
+            # draw objects:
             self.screen.blit(self.bg_surface, (0, 0))
             for obj in system.objects:
                 self.screen.blit(obj.get_surface(), obj.position)
@@ -595,14 +617,9 @@ def start_game(screen, beat_map, diff, volume):
     game.start()
 
 
-# make system
+# make example of system
 
 
 system = System('bg.jpg')
 system.play()
 
-'''
-TODO:
-add music
-
-'''

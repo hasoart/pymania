@@ -1,12 +1,10 @@
 # coding:utf-8
-import pydub
 import pygame
 import os
 import pathlib
 import json
 from GameMaster import GameMaster
 from beatmap_parser import get_beatmaps
-import audioplayer
 
 pygame.font.init()
 pygame.mixer.init()
@@ -190,7 +188,7 @@ class Slider:
 
 
 class DropDown:
-    def __init__(self, position, image, font, font_color, objects, constants, screen, main_size=None):
+    def __init__(self, position, image, font, font_color, objects, constants, system, main_size=None):
         """
         :param position: pos of left high corner of main block
         :param image: image of arrow
@@ -208,7 +206,8 @@ class DropDown:
         self.size = ()
         self.additional_objects = []
         self.constants = constants
-        self.screen = screen
+        self.system = system
+        self.screen = self.system.screen
         self.add_obj_func = {}
         # count font of text if main_size:
         max_size = [0, 0]
@@ -247,10 +246,31 @@ class DropDown:
     def unlock(self):
         """ when list is close and became into opened:"""
         self.drawing_objects += self.additional_objects
+        constants = self.system.constants['drop_down']
+
+        name = TextBox(
+            (constants['place_image'] * self.system.screen.get_width(), self.position[1]),
+            self.font, self.font_color, 'Title: ', 'left', self.main.bg_image,
+            size=(int(constants['title_size'][0] * self.system.screen.get_width()),
+                  int(constants['title_size'][1] * self.system.screen.get_height())))
+        artist = TextBox(
+            (constants['place_image'] * self.system.screen.get_width(), self.position[1] + name.size[1]),
+            self.font, self.font_color, 'Artist: ', 'left', self.main.bg_image,
+            size=(int(constants['title_size'][0] * self.system.screen.get_width()),
+                  int(constants['title_size'][1] * self.system.screen.get_height())))
+        rect = TextBox(
+            (constants['place_image'] * self.system.screen.get_width(), self.position[1] + name.size[1] + artist.size[1]),
+            self.font, self.font_color, 'dhvbsjdvbskdjv', 'left', self.main.bg_image,
+            size=(int(constants['size_image'][0] * self.system.screen.get_width()),
+                  int(constants['size_image'][1] * self.system.screen.get_height())))
+        self.rect = [name, artist, rect]
+        self.system.objects += self.rect
 
     def lock(self):
         """when list is opened and became into close"""
         self.drawing_objects = [self.main, self.arrow]
+        for obj in self.rect:
+            self.system.objects.remove(obj)
 
     def get_surface(self):
         """draw objects:"""
@@ -323,7 +343,7 @@ class DropDownList:
         # add objects in working form:
         for obj in self.objects:
             drop_down = DropDown((self.position[0], self.position[1] + self.objects.index(obj) * max_size[1]),
-                                 self.image, self.font, self.font_color, obj, self.constants, self.screen,
+                                 self.image, self.font, self.font_color, obj, self.constants, self.system,
                                  main_size=max_size)
             self.drop_down_lists.append(drop_down)
 
@@ -369,9 +389,6 @@ class DropDownList:
                         if elem == obj.objects:
                             pygame.mixer.music.stop()
                             sound = elem[self.drop_down_lists.index(obj)]['music']
-                            sound = pydub.AudioSegment.from_mp3(sound)
-                            sound = sound[int(elem[self.drop_down_lists.index(obj)]['preview']):]
-
                             pygame.mixer.music.load(sound)
                             pygame.mixer.music.play()
 
@@ -583,7 +600,6 @@ def start_game(screen, beat_map, diff, volume):
 
 system = System('bg.jpg')
 system.play()
-
 
 '''
 TODO:

@@ -1,10 +1,12 @@
 # coding:utf-8
+import pydub
 import pygame
 import os
 import pathlib
 import json
 from GameMaster import GameMaster
 from beatmap_parser import get_beatmaps
+import audioplayer
 
 pygame.font.init()
 pygame.mixer.init()
@@ -281,8 +283,10 @@ class DropDown:
                             0] / 2 and abs(event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= \
                                 obj.size[1] / 2:
                             obje = self.add_obj_func[obj]
-
                             obje['func'][0](obje['func'][1], obje['func'][2], obje['func'][3], obje['func'][4])
+                            return True
+
+        return False
 
 
 class DropDownList:
@@ -345,7 +349,10 @@ class DropDownList:
         if event.type == pygame.MOUSEBUTTONDOWN:
             for obj in self.drop_down_lists:
                 status = obj.opened
-                obj.click(event)
+                buzy = pygame.mixer.music.get_busy()
+                pygame.mixer.music.pause()
+                if not obj.click(event) and buzy:
+                    pygame.mixer.music.play()
                 # if close some drop down:
                 if status and not obj.opened:
                     for elem in self.drop_down_lists[self.drop_down_lists.index(obj) + 1:]:
@@ -362,12 +369,10 @@ class DropDownList:
                         if elem == obj.objects:
                             pygame.mixer.music.stop()
                             sound = elem[self.drop_down_lists.index(obj)]['music']
-                            # sound = AudioSegment.from_mp3(str(sound))
-
-                            sound = sound[0:]
+                            sound = pydub.AudioSegment.from_mp3(sound)
+                            sound = sound[int(elem[self.drop_down_lists.index(obj)]['preview']):]
 
                             pygame.mixer.music.load(sound)
-                            # pygame.mixer.music.set_pos(float(elem[self.drop_down_lists.index(obj)]['preview'])/1000)
                             pygame.mixer.music.play()
 
 
@@ -406,6 +411,7 @@ class System:
         self.start_time = pygame.time.get_ticks()
         self.bg_sound = os.path.join(self.folder, 'song.mp3')
         self.place = None
+        self.finished = False
 
     def set(self, name, value):
         # set some parametres of game
@@ -505,19 +511,12 @@ class System:
         objects = []
         for beat_map in beatmaps:
             song = []
-            file = {}
-            file['text'] = beat_map['title']
-            file['music'] = beat_map['music_path']
-            file['type'] = 'main'
-            file['bg_image'] = beat_map['bg_image']
-            file['preview'] = beat_map['preview']
+            file = {'text': beat_map['title'], 'music': beat_map['music_path'], 'type': 'main',
+                    'bg_image': beat_map['bg_image'], 'preview': beat_map['preview']}
             song.append(file)
             for dif in beat_map['diffs']:
-                file = {}
-                file['music'] = beat_map['music_path']
-                file['type'] = 'not_main'
-                file['bg_image'] = beat_map['bg_image']
-                file['text'] = str(list(dif.keys())[0])
+                file = {'music': beat_map['music_path'], 'type': 'not_main', 'bg_image': beat_map['bg_image'],
+                        'preview': beat_map['preview'], 'text': str(list(dif.keys())[0])}
                 diff = os.path.join(beat_map['beatmap_directory'], dif[str(list(dif.keys())[0])])
                 file['func'] = [start_game, self.screen, beat_map['beatmap_directory'], diff, self.sets['volume'] * 100]
                 song.append(file)
@@ -540,14 +539,13 @@ class System:
 
         pygame.display.update()
         clock = pygame.time.Clock()
-        finished = False
-
+        start_screensaver()
         self.menu()
-        while not finished:
+        while not self.finished:
             clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    finished = True
+                    self.finished = True
                 for obj in system.objects:
                     if type(obj) != TextBox:
                         obj.click(event)
@@ -563,18 +561,20 @@ class System:
                 self.screen.blit(obj.get_surface(), obj.position)
 
             pygame.display.update()
-
-    def start_screensaver(self):
-        print('start')
+        pygame.quit()
 
     def exit_screensaver(self):
         print('exit')
+        self.finished = True
+
+
+def start_screensaver():
+    print('start')
 
 
 def start_game(screen, beat_map, diff, volume):
     print(beat_map, diff)
     game = GameMaster(screen, beat_map, diff, volume)
-
     game.start()
 
 
@@ -584,7 +584,6 @@ def start_game(screen, beat_map, diff, volume):
 system = System('bg.jpg')
 system.play()
 
-pygame.quit()
 
 '''
 TODO:

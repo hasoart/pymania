@@ -70,6 +70,10 @@ class Video:
 
         self.screen.blit(frame, frame_rect)
         pg.display.update()
+
+    def reverse(self):
+        self.frames = [self.frames[i] for i in range(len(self.frames) - 1, -1, -1)]
+
         
             
             

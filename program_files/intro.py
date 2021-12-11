@@ -72,8 +72,9 @@ class Video:
         pg.display.update()
 
     def reverse(self):
+        """
+        Reversing the video, so as the fist frame becomes the last, the second
+        becomes pre-last etc.
+        """
         self.frames = [self.frames[i] for i in range(len(self.frames) - 1, -1, -1)]
-
-        
-            
-            
+    

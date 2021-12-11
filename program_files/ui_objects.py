@@ -197,7 +197,7 @@ class DropDown:
         :param objects: [{'text':'', 'type':main/not_main, 'func':func, 'bg_image':bg_image},...,]
         :param constants: constants of game like screen or file with data
         :param system: system of current game
-        :param rect_pos: position of left corner of opening rectangle with inforation about song
+        :param rect_pos: position of left corner of opening rectangle with information about song
         :param main_size: size of one block
         """
         self.position = position
@@ -228,7 +228,8 @@ class DropDown:
         for obj in self.objects:
             if obj['type'] == 'main':
                 # add main block:
-                main = TextBox((0, 0), self.font, self.font_color, obj['text'], 'left', obj['bg_image'], size=main_size)
+                main = TextBox((0, 0), self.font, self.font_color, obj['text'], 'left', obj['rect_image'],
+                               size=main_size)
                 arrow = Button((main.size[0], 0), self.font, self.font_color,
                                '', 'left', self.image, (self.unlock, self.lock), size=(main.size[1], main.size[1]))
                 self.drawing_objects.append(main)
@@ -241,7 +242,7 @@ class DropDown:
                 button = Button(
                     (int((self.main.size[0] + self.arrow.size[0]) * self.constants['start']['indent']),
                      self.main.size[1] * (len(self.additional_objects) + 1)),
-                    self.font, self.font_color, obj['text'], 'left', obj['bg_image'], self.click,
+                    self.font, self.font_color, obj['text'], 'left', obj['rect_image'], self.click,
                     size=(int((self.main.size[0] + self.arrow.size[0]) * (1 - self.constants['start']['indent'])),
                           self.main.size[1]))
                 self.additional_objects.append(button)
@@ -256,21 +257,22 @@ class DropDown:
         # add rectangle with information about current song:
         name = TextBox(
             self.rect_pos,
-            self.font, self.font_color, 'Title: ' + self.main_obj['title'], 'left', self.main.bg_image,
+            self.font, self.font_color, 'Title: ' + self.main_obj['title'], 'left', self.main_obj['rect_image'],
             size=(int(constants['title_size'][0] * self.system.screen.get_width()),
                   int(constants['title_size'][1] * self.system.screen.get_height())))
         artist = TextBox(
             (self.rect_pos[0], self.rect_pos[1] + name.size[1]),
-            self.font, self.font_color, 'Artist: ' + self.main_obj['artist'], 'left', self.main.bg_image,
+            self.font, self.font_color, 'Artist: ' + self.main_obj['artist'], 'left', self.main_obj['rect_image'],
             size=(int(constants['title_size'][0] * self.system.screen.get_width()),
                   int(constants['title_size'][1] * self.system.screen.get_height())))
         rect = TextBox(
             (self.rect_pos[0], self.rect_pos[1] + name.size[1] + artist.size[1]),
-            self.font, self.font_color, '', 'left', self.main.bg_image,
+            self.font, self.font_color, '', 'left', self.main_obj['bg_image'],
             size=(int(constants['size_image'][0] * self.system.screen.get_width()),
                   int(constants['size_image'][1] * self.system.screen.get_height())))
         self.rect = [name, artist, rect]
         self.system.objects += self.rect
+        self.arrow.rect_surface = pygame.transform.flip(self.arrow.rect_surface, False, True)
 
     def lock(self):
         """when list is opened and became into close"""
@@ -278,6 +280,7 @@ class DropDown:
         self.drawing_objects = [self.main, self.arrow]
         for obj in self.rect:
             self.system.objects.remove(obj)
+        self.arrow.rect_surface = pygame.transform.flip(self.arrow.rect_surface, False, True)
 
     def get_surface(self):
         """draw objects:"""
@@ -549,14 +552,16 @@ class System:
             song = []
             file = {'text': beat_map['title'], 'music': beat_map['music_path'], 'type': 'main',
                     'bg_image': beat_map['bg_image'], 'preview': beat_map['preview'], 'title': beat_map['title'],
-                    'artist': beat_map['artist']}
+                    'artist': beat_map['artist'], 'rect_image': os.path.join(self.folder, 'rect_image.jpg')}
             song.append(file)
             for dif in beat_map['diffs']:
                 file = {'music': beat_map['music_path'], 'type': 'not_main', 'bg_image': beat_map['bg_image'],
-                        'preview': beat_map['preview'], 'text': str(list(dif.keys())[0])}
+                        'preview': beat_map['preview'], 'text': str(list(dif.keys())[0]),
+                        'rect_image': os.path.join(self.folder, 'rect_image.jpg')}
                 diff = os.path.join(beat_map['beatmap_directory'], dif[str(list(dif.keys())[0])])
                 file['func'] = [start_game, self.screen, beat_map['beatmap_directory'], diff, self.sets['volume'] * 100]
                 song.append(file)
+
             objects.append(song)
 
         _map = DropDownList((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
@@ -622,4 +627,3 @@ def start_game(screen, beat_map, diff, volume):
 
 system = System('bg.jpg')
 system.play()
-

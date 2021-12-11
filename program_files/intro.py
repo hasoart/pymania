@@ -32,7 +32,7 @@ class Video:
         Launches the whole video without possibility to stop
         (in future here may be checked events to have an ability to stop video)
         """
-        self.coontinue()
+        self.ccontinue()
         clock = pg.time.Clock()
 
         while self.is_playing:

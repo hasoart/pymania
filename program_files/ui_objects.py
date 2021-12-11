@@ -79,7 +79,8 @@ class Button(TextBox):
         box_size - ratio of the size of rect to size of text
         size - size of Button
         """
-        super().__init__(position, font, font_color, text, aligment, bg_image, box_size, size)
+        super().__init__(position, font, font_color, text, aligment, bg_image, box_size=box_size,
+                         size=size)
         self.func = func
 
     def click(self, event):
@@ -91,7 +92,10 @@ class Button(TextBox):
         if event.type == pygame.MOUSEBUTTONDOWN:
             rho = [event.pos[0] - self.position[0], event.pos[1] - self.position[1]]
             if self.size[0] >= rho[0] >= 0 and self.size[1] >= rho[1] >= 0:
-                self.func()
+                if type(self.func) != list:
+                    self.func()
+                else:
+                    self.func[0](self.rect_surface)
 
 
 class Slider:
@@ -419,7 +423,7 @@ class DropDownList:
 
 class System:
     # class that have all parametries of during menu-pack
-    def __init__(self, bg_image, volume=0.5, dim=0.5, blur=0.5, offset=0.5):
+    def __init__(self, bg_image='bg_1.png', volume=0.5, dim=0.5, blur=0.5, offset=0.5):
         """
         init for class System
         bg_image - image of background screen
@@ -454,6 +458,16 @@ class System:
     def set(self, name, value):
         # set some parametres of game
         self.sets[name] = value
+
+    def set_bg(self, bg):
+        """
+        set background
+        :param bg: surface with image of new bg
+        :return: None
+        """
+        self.bg_surface = bg
+        self.bg_surface = pygame.transform.smoothscale(self.bg_surface,
+                                                       (self.screen.get_width(), self.screen.get_height()))
 
     def menu(self):
         # open menu
@@ -504,36 +518,29 @@ class System:
         volume = TextBox((w * const['volume'][0], h * const['volume'][1]), font,
                          self.constants['colors']['textbox'], 'Volume', 'left', os.path.join(folder, 'box.jpg'),
                          box_size)
-        bg_dim = TextBox((w * const['bg_dim'][0], h * const['bg_dim'][1]), font,
-                         self.constants['colors']['textbox'], 'Dim', 'left', os.path.join(folder, 'box.jpg'), box_size)
-        bg_blur = TextBox((w * const['bg_blur'][0], h * const['bg_blur'][1]), font,
-                          self.constants['colors']['textbox'], 'Blur', 'left', os.path.join(folder, 'box.jpg'),
-                          box_size)
-        offset = TextBox((w * const['offset'][0], h * const['offset'][1]), font,
-                         self.constants['colors']['textbox'], 'Offset', 'left', os.path.join(folder, 'box.jpg'),
-                         box_size)
         volume_slider = Slider((w * const['volume_slider'][0], h * const['volume_slider'][1]),
                                os.path.join(folder, 'circle.png'), color_on, color_off,
                                (w * const['volume_slider_size'][0], h * const['volume_slider_size'][1]), self, 'volume',
                                font, self.constants['colors']['textbox'], self.sets['volume'], circle_size)
-        dim_slider = Slider((w * const['dim_slider'][0], h * const['dim_slider'][1]),
-                            os.path.join(folder, 'circle.png'), color_on, color_off,
-                            (w * const['dim_slider_size'][0], h * const['dim_slider_size'][1]), self, 'dim',
-                            font, self.constants['colors']['textbox'], self.sets['dim'], circle_size)
-        blur_slider = Slider((w * const['blur_slider'][0], h * const['blur_slider'][1]),
-                             os.path.join(folder, 'circle.png'), color_on, color_off,
-                             (w * const['blur_slider_size'][0], h * const['blur_slider_size'][1]), self, 'blur',
-                             font, self.constants['colors']['textbox'], self.sets['blur'], circle_size)
-        offset_slider = Slider((w * const['offset_slider'][0], h * const['offset_slider'][1]),
-                               os.path.join(folder, 'circle.png'), color_on, color_off,
-                               (w * const['offset_slider_size'][0], h * const['offset_slider_size'][1]), self, 'offset',
-                               font, self.constants['colors']['textbox'], self.sets['offset'], circle_size)
-
+        bg = TextBox((w * const['bg'][0], h * const['bg'][1]), font,
+                     self.constants['colors']['textbox'], 'Choose background:', 'left', os.path.join(folder, 'box.jpg'),
+                     box_size)
+        bg_1 = Button((w * const['bg_1'][0], h * const['bg_1'][1]), font,
+                      self.constants['colors']['common'], None, 'left', os.path.join(folder, 'bg_1.png'),
+                      [self.set_bg], box_size=box_size,
+                      size=(int(w * const['bg_button_size'][0]), int(h * const['bg_button_size'][1])))
+        bg_2 = Button((w * const['bg_2'][0], h * const['bg_2'][1]), font,
+                      self.constants['colors']['common'], None, 'left', os.path.join(folder, 'bg_2.png'),
+                      [self.set_bg], box_size=box_size,
+                      size=(int(w * const['bg_button_size'][0]), int(h * const['bg_button_size'][1])))
+        bg_3 = Button((w * const['bg_3'][0], h * const['bg_3'][1]), font,
+                      self.constants['colors']['common'], None, 'left', os.path.join(folder, 'bg_3.png'),
+                      [self.set_bg], box_size=box_size,
+                      size=(int(w * const['bg_button_size'][0]), int(h * const['bg_button_size'][1])))
         _exit = Button((w * const['exit'][0], h * const['exit'][1]), font,
                        self.constants['colors']['button'], 'Back', 'left', os.path.join(folder, 'rect.png'), self.place,
                        box_size)
-        self.objects = [menu_box, volume, bg_dim, bg_blur, offset, volume_slider, dim_slider, blur_slider,
-                        offset_slider, _exit]
+        self.objects = [menu_box, volume, volume_slider, _exit, bg_1, bg, bg_2, bg_3]
         self.place = self.settings
 
     def start(self):
@@ -572,8 +579,8 @@ class System:
             (w * const['settings'][0], h * const['settings'][1]), self.constants['font'],
             self.constants['colors']['button'], '', 'center', os.path.join(folder, 'settings.png'),
             self.settings,
-            self.constants['box_size'],
-            (int(w * const['settings_size'][0]), int(h * const['settings_size'][1])))
+            box_size=self.constants['box_size'],
+            size=(int(w * const['settings_size'][0]), int(h * const['settings_size'][1])))
         self.objects = [_map, setting]
 
     def play(self):
@@ -625,5 +632,5 @@ def start_game(screen, beat_map, diff, volume):
 # make example of system
 
 
-system = System('bg.jpg')
+system = System()
 system.play()

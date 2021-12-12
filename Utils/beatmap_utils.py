@@ -165,3 +165,20 @@ def get_beatmaps(beatmaps_folder):
         beatmaps_list.append(map_dict)
 
     return beatmaps_list
+
+
+def get_map_duration(hitobjects):
+    """
+    Возвращает длину карты в мс
+    :param hitobjects: np.array с объектами
+    :return: Длина карты в мс
+    """
+
+    times = []
+    for hitobject in hitobjects:
+        if hitobject['type'] == 'note':
+            times.append(hitobject['time'])
+        else:
+            times.append(hitobject['endTime'])
+
+    return max(times)

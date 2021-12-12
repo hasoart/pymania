@@ -1,14 +1,12 @@
-import os
 import time
 import json
 
 import pygame as pg
-import pygame.draw as draw
 import audioplayer
 
-from beatmap_parser import *
-from settings import settings
-from Track import Track
+from Utils.beatmap_utils import *
+from Utils.Track import Track
+from Settings.settings import settings
 
 
 def get_objects_to_render(map_time, hitobjects, hitobject_count, fall_time, render_start):
@@ -73,8 +71,8 @@ class ScoreMaster:
         return 100 * (sum(self.score_list) / (300 * len(self.score_list)) if self.score_list else 1.)
 
 
-class GameMaster:
-    def __init__(self, surface, beatmap_folder, beatmap, volume=50):
+class Game:
+    def __init__(self, surface, beatmap_folder, beatmap, system_to_return, volume=50):
         """
         :param surface: Поверхность игры
         :param beatmap_folder: путь директории карты
@@ -93,7 +91,7 @@ class GameMaster:
 
         self.width, self.height = surface.get_size()
 
-        with open('game_config.json', 'r') as f:
+        with open('./Settings/game_config.json', 'r') as f:
             self.game_config = json.load(f)
 
         self.settings = settings
@@ -102,9 +100,10 @@ class GameMaster:
         self.score_master = ScoreMaster()
 
         self.tracks = []
-
         self.track_count = int(self.metadata['CircleSize'])
         self.fall_time = 1000
+
+        self.system_to_return = system_to_return
 
         for i in range(self.track_count):
             self.tracks += [Track(i, self.settings[f'{self.track_count}k_keys'][i], self.score_master,
@@ -155,10 +154,16 @@ class GameMaster:
                           (20, self.height - h - 20, w, h))
         self.surface.blit(combo_surface, (20, self.height - h - 20))
 
-    def start(self):
-        finished = False
+    def end_early(self, key_state):
+        if key_state == 1:
+            self.finished_early = self.finished = True
 
-        key_events = [(self.tracks[i].track_key, self.tracks[i].set_state) for i in range(self.track_count)]
+    def start(self):
+        self.finished = False
+        self.finished_early = False
+
+        key_events = [(self.tracks[i].track_key, self.tracks[i].set_state) for i in range(self.track_count)] + \
+                     [(pg.K_ESCAPE, self.end_early)]
         handler = EventHandler([(pg.QUIT, exit)], key_events)
 
         clock = pg.time.Clock()
@@ -170,13 +175,27 @@ class GameMaster:
 
         render_start = 0
 
-        player.play()
-        start_time = time.time() * 1000
         self.surface.blit(self.bg_image, (0, 0))
 
-        while not finished:
+        map_duration = get_map_duration(self.hitobjects)
+
+        # if map starts to abruptly give player some time
+        if self.hitobjects[0]['time'] < 3000:
+            time_correction = 3000 - self.hitobjects[0]['time']
+        else:
+            time_correction = 0
+
+        music_started = False
+
+        start_time = time.time() * 1000
+
+        while not self.finished:
             current_time = time.time() * 1000
-            map_time = current_time - start_time
+            map_time = current_time - start_time - time_correction
+
+            if (not music_started) and map_time >= 0:
+                player.play()
+                music_started = True
 
             render_start, render_end = get_objects_to_render(map_time, self.hitobjects, self.hitobject_count,
                                                              self.fall_time, render_start)
@@ -188,6 +207,11 @@ class GameMaster:
 
             pg.display.update()
             clock.tick(FPS)
+
+            if map_time >= map_duration + 3000:
+                self.finished = True
+
+        self.system_to_return.play(first_time=False)
 
 
 class EventHandler:

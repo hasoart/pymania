@@ -1,4 +1,4 @@
-from GameMaster import *
+from Core.Game import *
 
 FPS = 300
 
@@ -33,5 +33,5 @@ clock = pg.time.Clock()
 # player = audioplayer.AudioPlayer(mp3)
 # player.play()
 
-game = GameMaster(screen, '../Beatmaps/' + beatmaps[beatmap_number], difficulties[difficulty_number])
+game = Game(screen, '../Beatmaps/' + beatmaps[beatmap_number], difficulties[difficulty_number])
 game.start()

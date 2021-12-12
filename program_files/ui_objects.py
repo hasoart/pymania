@@ -1,8 +1,10 @@
 # coding:utf-8
-import pygame
 import os
-import pathlib
 import json
+
+import pygame
+import audioplayer
+
 from GameMaster import GameMaster
 from beatmap_parser import get_beatmaps
 
@@ -184,7 +186,7 @@ class Slider:
                         self.size[0] - self.circle_size[0])
                 self.circle_pos = (
                     self.position[0] + self.size[0] * self.value, self.position[1] + self.circle_size[1] / 2)
-                system.set(self.name, self.value)
+                self.system.set(self.name, self.value)
 
         if event.type == pygame.MOUSEBUTTONUP and self.condition:
             # change condition of object if clicked
@@ -234,7 +236,7 @@ class DropDown:
                 # add main block:
                 main = TextBox((0, 0), self.font, self.font_color, obj['text'], 'left', obj['rect_image'],
                                size=main_size)
-                arrow = Button((main.size[0], 0), self.font, self.font_color,
+                arrow = Button((0, 0), self.font, self.font_color,
                                '', 'left', self.image, (self.unlock, self.lock), size=(main.size[1], main.size[1]))
                 self.drawing_objects.append(main)
                 self.drawing_objects.append(arrow)
@@ -296,10 +298,12 @@ class DropDown:
     def click(self, event):
         """
         react to events
-        :param event - event pygame"""
+        :param event - event pygame
+        """
         if event.type == pygame.MOUSEBUTTONDOWN:
+            # print(event.pos[0], self.position[0], self.arrow.position[0], self.arrow.size[0]) TODO
             if abs(event.pos[0] - self.position[0] - self.arrow.position[0] - self.arrow.size[0] / 2) <= \
-                    self.arrow.size[1] / 2 and \
+                    self.arrow.size[0] / 2 and \
                     abs(event.pos[1] - self.position[1] - self.arrow.position[1] - self.arrow.size[1] / 2) <= \
                     self.arrow.size[1] / 2:
                 # events with clicking arrow:
@@ -384,17 +388,21 @@ class DropDownList:
         if event.type == pygame.MOUSEBUTTONDOWN:
             for obj in self.drop_down_lists:
                 status = obj.opened
-                # play music:
-                buzy = pygame.mixer.music.get_busy()
-                pygame.mixer.music.pause()
-                if not obj.click(event) and buzy:
-                    pygame.mixer.music.play()
+
+                # play music: TODO
+                # buzy = pygame.mixer.music.get_busy()
+                # pygame.mixer.music.pause()
+                # if not obj.click(event) and buzy:
+                #     pygame.mixer.music.play()
+
+                obj.click(event)
+
                 # if close some drop down:
                 if status and not obj.opened:
                     for elem in self.drop_down_lists[self.drop_down_lists.index(obj) + 1:]:
                         elem.position = (
                             elem.position[0], elem.position[1] - len(obj.additional_objects) * obj.main.size[1])
-                    pygame.mixer.music.stop()
+                    # pygame.mixer.music.stop() FIXME
 
                 # if open some drop down:
                 if not status and obj.opened:
@@ -412,13 +420,13 @@ class DropDownList:
                     for elem in self.drop_down_lists[self.drop_down_lists.index(obj) + 1:]:
                         elem.position = (
                             elem.position[0], elem.position[1] + len(obj.additional_objects) * obj.main.size[1])
-                    # play music:
-                    for elem in self.objects:
-                        if elem == obj.objects:
-                            pygame.mixer.music.stop()
-                            sound = elem[self.drop_down_lists.index(obj)]['music']
-                            pygame.mixer.music.load(sound)
-                            pygame.mixer.music.play()
+                    # play music: TODO
+                    # for elem in self.objects:
+                    #     if elem == obj.objects:
+                    #         pygame.mixer.music.stop()
+                    #         sound = elem[self.drop_down_lists.index(obj)]['music']
+                    #         pygame.mixer.music.load(sound)
+                    #         pygame.mixer.music.play()
 
 
 class System:
@@ -436,22 +444,25 @@ class System:
             sets = json.load(f)
         self.screen = pygame.display.set_mode((sets['width'], sets['height']))
         self.FPS = sets['FPS']
+        self.Beatmaps_directory = sets['Beatmaps_directory']
+        self.assets_directory = sets['assets_directory']
         self.sets = {'volume': volume, 'dim': dim, 'blur': blur, 'offset': offset}
         self.bg_image = bg_image
         self.objects = []
-        # open file of pictures:
-        full_path = os.path.abspath(os.curdir)
-        folder = os.path.join(pathlib.Path(full_path).parents[0], 'assets')
-        self.folder = folder
+
         # open file with game constants:
         with open('constants.json', 'r') as f:
             self.constants = json.load(f)
+
         # make background surface:
-        self.bg_surface = pygame.image.load(os.path.join(self.folder, self.bg_image)).convert_alpha()
+        self.bg_surface = pygame.image.load(os.path.join(self.assets_directory, self.bg_image)).convert_alpha()
         self.screen.blit(self.bg_surface, (0, 0))
         self.bg_surface = pygame.transform.smoothscale(self.bg_surface,
                                                        (self.screen.get_width(), self.screen.get_height()))
-        self.bg_sound = os.path.join(self.folder, 'song.mp3')
+        self.bg_sound = os.path.join(self.assets_directory, 'song.mp3')
+        self.start_music_player = audioplayer.AudioPlayer(self.bg_sound)
+        self.audio_busy = False
+
         self.place = None
         self.finished = False
 
@@ -476,7 +487,7 @@ class System:
         screen = self.screen
         w = screen.get_width()
         h = screen.get_height()
-        folder = self.folder
+        folder = self.assets_directory
         const = self.constants['menu']
         box_size = self.constants['box_size']
         font = self.constants['font']
@@ -504,7 +515,7 @@ class System:
         screen = self.screen
         w = screen.get_width()
         h = screen.get_height()
-        folder = self.folder
+        folder = self.assets_directory
         const = self.constants['settings']
         box_size = self.constants['box_size']
         circle_size = self.constants['circle_size']
@@ -544,36 +555,37 @@ class System:
         self.place = self.settings
 
     def start(self):
+        self.audio_busy = True
         screen = self.screen
         self.place = self.start
         w = screen.get_width()
         h = screen.get_height()
-        folder = self.folder
+        folder = self.assets_directory
         const = self.constants['start']
         # take information about tracks into files:
-        beatmap_folder = os.path.join(pathlib.Path(self.folder).parents[0], 'Beatmaps')
-        beatmaps = get_beatmaps(beatmap_folder)
+        beatmaps = get_beatmaps(self.Beatmaps_directory)
         objects = []
+
         # add songs into drop_down format:
         for beat_map in beatmaps:
             song = []
             file = {'text': beat_map['title'], 'music': beat_map['music_path'], 'type': 'main',
                     'bg_image': beat_map['bg_image'], 'preview': beat_map['preview'], 'title': beat_map['title'],
-                    'artist': beat_map['artist'], 'rect_image': os.path.join(self.folder, 'rect_image.jpg')}
+                    'artist': beat_map['artist'], 'rect_image': os.path.join(self.assets_directory, 'rect_image.jpg')}
             song.append(file)
             for dif in beat_map['diffs']:
                 file = {'music': beat_map['music_path'], 'type': 'not_main', 'bg_image': beat_map['bg_image'],
                         'preview': beat_map['preview'], 'text': str(list(dif.keys())[0]),
-                        'rect_image': os.path.join(self.folder, 'rect_image.jpg')}
-                diff = os.path.join(beat_map['beatmap_directory'], dif[str(list(dif.keys())[0])])
+                        'rect_image': os.path.join(self.assets_directory, 'rect_image.jpg')}
+                diff = dif[str(list(dif.keys())[0])]
                 file['func'] = [start_game, self.screen, beat_map['beatmap_directory'], diff, self.sets['volume'] * 100]
                 song.append(file)
 
             objects.append(song)
 
         _map = DropDownList((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
-                            os.path.join(self.folder, 'arrow.png'), self.constants['font'],
-                            'black', objects, self.constants, self, os.path.join(self.folder, 'arrow.png'))
+                            os.path.join(self.assets_directory, 'arrow.png'), self.constants['font'],
+                            'black', objects, self.constants, self, os.path.join(self.assets_directory, 'arrow.png'))
         # add button:
         setting = Button(
             (w * const['settings'][0], h * const['settings'][1]), self.constants['font'],
@@ -591,24 +603,30 @@ class System:
         clock = pygame.time.Clock()
         start_screensaver()
         self.menu()
+
+        # TODO
+        self.start_music_player.volume = int(100 * self.sets['volume'])
+        self.start_music_player.play(loop=True)
+
         while not self.finished:
             clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.finished = True
-                for obj in system.objects:
+                for obj in self.objects:
                     if type(obj) != TextBox:
                         obj.click(event)
 
-            # play bg music
-            if not pygame.mixer.music.get_busy():
-                pygame.mixer.music.load(self.bg_sound)
-                pygame.mixer.music.play()
+            # play bg music TODO
+            if self.audio_busy:
+                self.start_music_player.pause()
+            else:
+                self.start_music_player.resume()
             pygame.mixer.music.set_volume(self.sets['volume'])
 
             # draw objects:
             self.screen.blit(self.bg_surface, (0, 0))
-            for obj in system.objects:
+            for obj in self.objects:
                 self.screen.blit(obj.get_surface(), obj.position)
 
             pygame.display.update()
@@ -630,7 +648,5 @@ def start_game(screen, beat_map, diff, volume):
 
 
 # make example of system
-
-
 system = System()
 system.play()

@@ -159,7 +159,8 @@ def get_beatmaps(beatmaps_folder):
             beatmap_path = os.path.join(map_directory, beatmap)
             metadata = get_metadata(beatmap_path)
             difficulty = metadata['Version']
-            map_dict['diffs'].append({difficulty: beatmap})
+            if metadata['Mode'] == '3':
+                map_dict['diffs'].append({difficulty: beatmap})
 
         beatmaps_list.append(map_dict)
 

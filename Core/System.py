@@ -175,14 +175,16 @@ class System:
                         'preview': beat_map['preview'], 'text': str(list(dif.keys())[0]),
                         'rect_image': os.path.join(self.assets_directory, 'rect_image.jpg')}
                 diff = dif[str(list(dif.keys())[0])]
-                file['func'] = [self.start_game, self.screen, beat_map['beatmap_directory'], diff, self.sets['volume'] * 100]
+                file['func'] = [self.start_game, self.screen, beat_map['beatmap_directory'], diff,
+                                self.sets['volume'] * 100]
                 song.append(file)
 
             objects.append(song)
 
         _map = DropDownList((w * const['drop_down_list'][0], h * const['drop_down_list'][1]),
                             os.path.join(self.assets_directory, 'arrow.png'), self.constants['font'],
-                            'black', objects, self.constants, self, self.audio_player)
+                            'black', objects, self.constants, self, self.audio_player,
+                            (int(w * const['drop_down_list_size'][0]), int(h * const['drop_down_list_size'][1])))
         # add button:
         setting = Button(
             (w * const['settings'][0], h * const['settings'][1]), self.constants['font'],

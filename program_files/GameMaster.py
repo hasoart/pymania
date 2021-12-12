@@ -11,6 +11,39 @@ from settings import settings
 from Track import Track
 
 
+def get_objects_to_render(map_time, hitobjects, hitobject_count, fall_time, render_start):
+    """
+    Возвращает какие ноты видны на экране, чтобы рендерить только их
+
+    :param map_time: Время карты в мс
+    :param hitobjects: Список или np.array объектов
+    :param hitobject_count: Количество объектов в списке hitobjeccts
+    :param render_start: Предыдущее значение начала рендера
+    :param fall_time: Время падения ноты от края до края
+
+    :return: render_start, render_end - индексы, показывающие какие элементы рендерить
+    """
+    new_render_start = render_start
+
+    while True:
+        if hitobjects[new_render_start]['type'] == 'note':
+            obj_time = hitobjects[new_render_start]['time']
+        else:
+            obj_time = hitobjects[new_render_start]['endTime']
+        if obj_time >= map_time - 1000 or new_render_start == hitobject_count - 1:
+            break
+        new_render_start += 1
+
+    i = new_render_start
+    while True:
+        if hitobjects[i]['time'] >= map_time + 1000 + fall_time or i == hitobject_count - 1:
+            break
+        i += 1
+    render_end = i + 1
+
+    return new_render_start, render_end
+
+
 class ScoreMaster:
     def __init__(self):
         self.score_list = []
@@ -145,22 +178,8 @@ class GameMaster:
             current_time = time.time() * 1000
             map_time = current_time - start_time
 
-            # Считает какие ноты видны, чтобы рендерить только их
-            while True:
-                if self.hitobjects[render_start]['type'] == 'note':
-                    obj_time = self.hitobjects[render_start]['time']
-                else:
-                    obj_time = self.hitobjects[render_start]['endTime']
-                if obj_time >= map_time - 1000 or render_start == self.hitobject_count - 1:
-                    break
-                render_start += 1
-
-            i = render_start
-            while True:
-                if self.hitobjects[i]['time'] >= map_time + 1000 + self.fall_time or i == self.hitobject_count - 1:
-                    break
-                i += 1
-            render_end = i + 1
+            render_start, render_end = get_objects_to_render(map_time, self.hitobjects, self.hitobject_count,
+                                                             self.fall_time, render_start)
 
             for track in self.tracks:
                 track.update(map_time, self.hitobjects[render_start:render_end])

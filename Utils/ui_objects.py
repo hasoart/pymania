@@ -1,7 +1,6 @@
 import pygame
 import audioplayer
 
-
 pygame.font.init()
 
 
@@ -320,7 +319,8 @@ class DropDown:
 
 
 class DropDownList:
-    def __init__(self, position, image, font, font_color, objects, constants, system, player: audioplayer.AudioPlayer):
+    def __init__(self, position, image, font, font_color, objects, constants, system, player: audioplayer.AudioPlayer,
+                 size):
         """
         :param position: pos of left high corner of main block
         :param image: image of arrow
@@ -330,6 +330,7 @@ class DropDownList:
         :param constants: constants of game like screen or file with data
         :param system: system of game
         :param player: audioplayer to play music
+        :param size: max size of block
         """
         self.position = position
         self.image = image
@@ -342,23 +343,16 @@ class DropDownList:
         self.screen = self.system.screen
         self.player = player
         # count max size of objects:
-        max_size = [0, 0]
-        # change font if no freedom space:
-        for arr in self.objects:
-            for obj in arr:
-                f = pygame.font.Font(None, self.font)
-                text_surface = f.render(obj['text'], True, self.font_color)
-                max_size[0] = max(max_size[0], int(text_surface.get_size()[0] * constants['box_size'][0]))
-                max_size[1] = max(max_size[1], int(text_surface.get_size()[1] * constants['box_size'][1]))
+        self.max_size = size
         # add objects in working form:
         for obj in self.objects:
-            drop_down = DropDown((self.position[0], self.position[1] + self.objects.index(obj) * max_size[1]),
+            drop_down = DropDown((self.position[0], self.position[1] + self.objects.index(obj) * self.max_size[1]),
                                  self.image, self.font, self.font_color, obj, self.constants, self.system,
                                  (self.position[0] * self.constants['drop_down']['place_image'], self.position[1]),
-                                 main_size=max_size)
+                                 main_size=self.max_size)
             self.drop_down_lists.append(drop_down)
 
-        self.size = (self.drop_down_lists[0].size[0], max_size[1] * 9)
+        self.size = (self.drop_down_lists[0].size[0], self.max_size[1] * 9)
 
     def get_surface(self):
         """

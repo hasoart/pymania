@@ -211,6 +211,7 @@ class Game:
             if map_time >= map_duration + 3000:
                 self.finished = True
 
+        player.close()
         self.system_to_return.play(first_time=False)
 
 

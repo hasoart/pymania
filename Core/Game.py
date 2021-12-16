@@ -125,7 +125,7 @@ class ScoreMaster:
         Calculates the rank of player's result due to accuracy and having misses
         """
         accuracy = self.get_accuracy()
-        have_misses = False  # FIXME -- waiting for the function
+        have_misses = bool(self.get_hit_counts()[3])
 
         if accuracy == 100:
             rank = 'SS'

@@ -214,6 +214,31 @@ class Game:
         player.close()
         self.system_to_return.play(first_time=False)
 
+    def define_rank(self):
+        accuracy = self.score_master.get_accuracy()
+        have_misses = False  # FIXME -- waiting for the function
+
+        if accuracy == 100:
+            rank = 'SS'
+        elif accuracy >= 93.333:
+            if not have_misses:
+                rank = 'S'
+            else:
+                rank = 'A'
+        elif accuracy >= 85:
+            rank = 'B'
+        elif accuracy >= 75:
+            rank = 'C'
+        else:
+            rank = 'D'
+
+        return rank
+
+    def stats(self):
+        rank = self.define_rank()
+        surface = pg.Surface((1400, 700))
+
+
 
 class EventHandler:
     def __init__(self, regular_events, key_events):

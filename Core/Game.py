@@ -120,6 +120,29 @@ class ScoreMaster:
 
         return tuple(*counts)
 
+    def get_rank(self):
+        """
+        Calculates the rank of player's result due to accuracy and having misses
+        """
+        accuracy = self.get_accuracy()
+        have_misses = False  # FIXME -- waiting for the function
+
+        if accuracy == 100:
+            rank = 'SS'
+        elif accuracy >= 93.333:
+            if not have_misses:
+                rank = 'S'
+            else:
+                rank = 'A'
+        elif accuracy >= 85:
+            rank = 'B'
+        elif accuracy >= 75:
+            rank = 'C'
+        else:
+            rank = 'D'
+
+        return rank
+
 
 class Game:
     def __init__(self, surface, beatmap_folder, beatmap, system_to_return, volume=50):
@@ -160,7 +183,8 @@ class Game:
                                   od=float(self.metadata['OverallDifficulty']),
                                   hit_distance=self.game_config['hit_distance'],
                                   width=self.game_config['track_width'], height=self.height,
-                                  note_height=self.game_config['note_height'], hold_width=self.game_config['hold_width'],
+                                  note_height=self.game_config['note_height'],
+                                  hold_width=self.game_config['hold_width'],
                                   bg_color=self.game_config['track_color'], note_color=self.game_config['note_color'],
                                   hold_color=self.game_config['hold_color'], fall_time=self.fall_time,
                                   key_color=self.game_config['key_color'])]
@@ -264,37 +288,14 @@ class Game:
         player.close()
         self.system_to_return.play(first_time=False)
 
-    def define_rank(self):
-        """
-        Calculates the rank of player's result due to accuracy and having misses
-        """
-        accuracy = self.score_master.get_accuracy()
-        have_misses = False  # FIXME -- waiting for the function
-
-        if accuracy == 100:
-            rank = 'SS'
-        elif accuracy >= 93.333:
-            if not have_misses:
-                rank = 'S'
-            else:
-                rank = 'A'
-        elif accuracy >= 85:
-            rank = 'B'
-        elif accuracy >= 75:
-            rank = 'C'
-        else:
-            rank = 'D'
-
-        return rank
-
     def stats(self):
         """
         Returns the surface with players' game statisctics
         """
-        rank = self.define_rank()
+        rank = self.score_master.get_rank()
         surface = pg.Surface((1400, 700))
 
-        frame = pg.image.load('./assets/bg.jpg')
+        frame = self.bg_image
         frame_rect = frame.get_rect(topleft=(0, 0))
         surface.blit(frame, frame_rect)
 
@@ -312,7 +313,6 @@ class Game:
             surface.blit(u_rank_text, (480, 60))
 
         return surface
-
 
 
 class EventHandler:

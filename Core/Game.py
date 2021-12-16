@@ -215,6 +215,9 @@ class Game:
         self.system_to_return.play(first_time=False)
 
     def define_rank(self):
+        """
+        Calculates the rank of player's result due to accuracy and having misses
+        """
         accuracy = self.score_master.get_accuracy()
         have_misses = False  # FIXME -- waiting for the function
 
@@ -235,8 +238,30 @@ class Game:
         return rank
 
     def stats(self):
+        """
+        Returns the surface with players' game statisctics
+        """
         rank = self.define_rank()
         surface = pg.Surface((1400, 700))
+
+        frame = pg.image.load('./assets/bg.jpg')
+        frame_rect = frame.get_rect(topleft=(0, 0))
+        surface.blit(frame, frame_rect)
+
+        f1 = pg.font.SysFont('ptmono', 48)
+        u_rank_text = f1.render('Your Rank', False, (180, 0, 0))
+        surface.blit(u_rank_text, (500, 0))
+
+        if rank == 'SS':
+            f2 = pg.font.SysFont('ptmono', 240)
+            u_rank_text = f2.render(rank, False, (180, 0, 0))
+            surface.blit(u_rank_text, (480, 80))
+        else:
+            f2 = pg.font.SysFont('ptmono', 448)
+            u_rank_text = f2.render(rank, False, (180, 0, 0))
+            surface.blit(u_rank_text, (480, 60))
+
+        return surface
 
 
 

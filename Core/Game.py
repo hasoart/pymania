@@ -43,6 +43,9 @@ def get_objects_to_render(map_time, hitobjects, hitobject_count, fall_time, rend
 
 
 class ScoreMaster:
+    """
+    Класс для удобной работы с очками, их подсчета и хранения.
+    """
     def __init__(self):
         self.score_list = []
         self.score = 0
@@ -50,6 +53,15 @@ class ScoreMaster:
         self.max_combo = 0
 
     def append(self, x):
+        """
+        Добавляет новые очки в список очков
+
+        :param x: То, что добавляется в список. Допустимые значения - (300, 100, 50, 0)
+        :return: None
+        """
+        if x not in (0, 50, 100, 300):
+            raise ValueError("Trying to append invalid value")
+
         if x >= 50:
             self.combo += 1
             self.score += x * self.combo
@@ -59,16 +71,54 @@ class ScoreMaster:
         self.score_list.append(x)
 
     def get_combo(self):
+        """
+        Возвращает текущее комбо
+        :return: int
+        """
         return self.combo
 
     def get_max_combo(self):
+        """
+        Возвращает максимальное комбо
+        :return: int
+        """
         return self.max_combo
 
     def get_score(self):
+        """
+        Возвращает текущие очки
+        :return: int
+        """
         return self.score
 
     def get_accuracy(self):
+        """
+        Возвращает текущую точность
+        :return: float
+        """
         return 100 * (sum(self.score_list) / (300 * len(self.score_list)) if self.score_list else 1.)
+
+    def get_hit_counts(self):
+        """
+        Возвращает количество 300, 100, 50 и миссов
+
+        :return: Количество 300, 100, 50 и миссов в виде (300, 100, 50, miss)
+        """
+        counts = [0, 0, 0, 0]
+
+        for hit in self.score_list:
+            if hit == 300:
+                counts[0] += 1
+            elif hit == 100:
+                counts[1] += 1
+            elif hit == 50:
+                counts[2] += 1
+            elif hit == 0:
+                counts[3] += 1
+            else:
+                raise ValueError("Invalid value in score list")
+
+        return tuple(*counts)
 
 
 class Game:

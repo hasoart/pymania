@@ -299,16 +299,19 @@ class Game:
         frame_rect = frame.get_rect(topleft=(0, 0))
         surface.blit(frame, frame_rect)
 
-        f1 = pg.font.SysFont('ptmono', 48)
+        f1 = pg.font.Font(os.path.join(self.game_config['assets_directory'],
+                                       'PTMono-Regular.ttf'), 48)
         u_rank_text = f1.render('Your Rank', False, (180, 0, 0))
         surface.blit(u_rank_text, (500, 0))
 
         if rank == 'SS':
-            f2 = pg.font.SysFont('ptmono', 240)
+            f2 = pg.font.Font(os.path.join(self.game_config['assets_directory'],
+                                       'PTMono-Regular.ttf'), 240)
             u_rank_text = f2.render(rank, False, (180, 0, 0))
             surface.blit(u_rank_text, (480, 80))
         else:
-            f2 = pg.font.SysFont('ptmono', 448)
+            f2 = pg.font.Font(os.path.join(self.game_config['assets_directory'],
+                                       'PTMono-Regular.ttf'), 448)
             u_rank_text = f2.render(rank, False, (180, 0, 0))
             surface.blit(u_rank_text, (480, 60))
 

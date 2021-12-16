@@ -1,5 +1,6 @@
 import time
 import json
+from typing import Tuple, Union, Callable
 
 import pygame as pg
 import audioplayer
@@ -9,13 +10,14 @@ from Utils.Track import Track
 from Settings.settings import settings
 
 
-def get_objects_to_render(map_time, hitobjects, hitobject_count, fall_time, render_start):
+def get_objects_to_render(map_time: int, hitobjects: np.array, hitobject_count: int,
+                          fall_time: int, render_start: int) -> Tuple[int, int]:
     """
     Возвращает какие ноты видны на экране, чтобы рендерить только их
 
     :param map_time: Время карты в мс
-    :param hitobjects: Список или np.array объектов
-    :param hitobject_count: Количество объектов в списке hitobjeccts
+    :param hitobjects: np.array объектов
+    :param hitobject_count: Количество объектов в списке hitobjeccts.
     :param render_start: Предыдущее значение начала рендера
     :param fall_time: Время падения ноты от края до края
 
@@ -52,53 +54,53 @@ class ScoreMaster:
         self.combo = 0
         self.max_combo = 0
 
-    def append(self, x):
+    def append(self, x: int) -> None:
         """
         Добавляет новые очки в список очков
 
-        :param x: То, что добавляется в список. Допустимые значения - (300, 100, 50, 0)
+        :param x: То, что добавляется в список. Допустимые значения - (300, 100, 50, 0, -1)
         :return: None
         """
-        if x not in (0, 50, 100, 300):
+        if x not in (-1, 0, 50, 100, 300):
             raise ValueError("Trying to append invalid value")
 
         if x >= 50:
             self.combo += 1
             self.score += x * self.combo
         else:
-            self.max_combo = max(self.combo, self.max_combo)
             self.combo = 0
+        self.max_combo = max(self.combo, self.max_combo)
         self.score_list.append(x)
 
-    def get_combo(self):
+    def get_combo(self) -> int:
         """
         Возвращает текущее комбо
         :return: int
         """
         return self.combo
 
-    def get_max_combo(self):
+    def get_max_combo(self) -> int:
         """
         Возвращает максимальное комбо
         :return: int
         """
         return self.max_combo
 
-    def get_score(self):
+    def get_score(self) -> int:
         """
         Возвращает текущие очки
         :return: int
         """
         return self.score
 
-    def get_accuracy(self):
+    def get_accuracy(self) -> float:
         """
         Возвращает текущую точность
         :return: float
         """
         return 100 * (sum(self.score_list) / (300 * len(self.score_list)) if self.score_list else 1.)
 
-    def get_hit_counts(self):
+    def get_hit_counts(self) -> Tuple[int, int, int, int]:
         """
         Возвращает количество 300, 100, 50 и миссов
 
@@ -120,9 +122,16 @@ class ScoreMaster:
 
         return tuple(*counts)
 
-    def get_rank(self):
+    def get_rank(self) -> str:
         """
-        Calculates the rank of player's result due to accuracy and having misses
+        Calculates the rank of player's result due to accuracy and having misses.
+
+        :return: Rank of the score - 'SS' if accuracy is 100%,
+                                     'S' if accuracy is greater than 93.333% and there are no misses,
+                                     'A' if accuracy is greater than 93.333% but there are misses,
+                                     'B' if accuracy is greater than 85%,
+                                     'C' if accuracy is greater than 75%,
+                                     'D' if accuracy is lower than 75%
         """
         accuracy = self.get_accuracy()
         have_misses = bool(self.get_hit_counts()[3])
@@ -145,7 +154,7 @@ class ScoreMaster:
 
 
 class Game:
-    def __init__(self, surface, beatmap_folder, beatmap, system_to_return, volume=50):
+    def __init__(self, surface: pg.Surface, beatmap_folder: str, beatmap: str, system_to_return, volume: int = 50):
         """
         :param surface: Поверхность игры
         :param beatmap_folder: путь директории карты
@@ -200,7 +209,7 @@ class Game:
         self.combo_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 70)
         self.accuracy_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 30)
 
-    def render(self):
+    def render(self) -> None:
         """
         Рендерит игру
         :return: None
@@ -232,7 +241,7 @@ class Game:
                           (20, self.height - h - 20, w, h))
         self.surface.blit(combo_surface, (20, self.height - h - 20))
 
-    def end_early(self, key_state):
+    def end_early(self, key_state: int) -> None:
         """
         Функция, которая активизируется если игрок хочет досрочно закончить игру.
         :param key_state:
@@ -241,7 +250,7 @@ class Game:
         if key_state == 1:
             self.finished_early = self.finished = True
 
-    def start(self):
+    def start(self) -> None:
         """
         Начинает игру.
         :return: None
@@ -301,7 +310,7 @@ class Game:
         player.close()
         self.system_to_return.play(first_time=False)
 
-    def stats(self):
+    def stats(self) -> None:
         """
         Returns the surface with players' game statisctics
         """
@@ -332,7 +341,7 @@ class EventHandler:
     """
     Класс для обработки событии.
     """
-    def __init__(self, regular_events, key_events):
+    def __init__(self, regular_events, key_events) -> None:
         """
         :param regular_events: Union(Union(pg.event, function)*). Выполняет function() при pg.event
         :param key_events: Union(Union(key, function)*). Выполняет function(key_state) если клавиша key зажата
@@ -344,7 +353,7 @@ class EventHandler:
         self.keys = [key_events[i][0] for i in range(len(key_events))]
         self.key_functions = [key_events[i][1] for i in range(len(key_events))]
 
-    def handle(self):
+    def handle(self) -> None:
         """
         Обрабатывает события.
         :return: None

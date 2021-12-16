@@ -1,7 +1,31 @@
+from typing import Tuple
+
 import pygame
 import audioplayer
 
 pygame.font.init()
+
+
+def smartscale(surface: pygame.Surface, size: Tuple[int, int]) -> pygame.Surface:
+    """
+    Scales surface to fill the size while keeping aspect ratio
+
+    :param surface: pygame.Surface to scale
+    :param size: Union[int, int] - size to fill
+
+    :return: pygame.Surface with scaled surface
+    """
+    w0, h0 = surface.get_size()
+    w, h = size
+
+    scaled_surface = pygame.Surface(size, pygame.SRCALPHA, 32)
+
+    if w0 * h >= w * h0:
+        surface_ = pygame.transform.smoothscale(surface, (w0*h//h0, h))
+    else:
+        surface_ = pygame.transform.smoothscale(surface, (w, h0*w//w0))
+    scaled_surface.blit(surface_, (0, 0))
+    return scaled_surface
 
 
 class TextBox:
@@ -38,7 +62,7 @@ class TextBox:
         # get background surface
         if self.bg_image:
             rect_surface = pygame.image.load(self.bg_image).convert_alpha()
-            self.rect_surface = pygame.transform.smoothscale(rect_surface, self.size)
+            self.rect_surface = smartscale(rect_surface, self.size)
         else:
             self.rect_surface = None
 
@@ -69,13 +93,22 @@ class Button(TextBox):
         aligment - 'center': position - cords of center
                    'left': position - cords of left high corner
         bg_image - image in background of text
-        func - what to do if button is clicked
+        func - function to call when button is clicked. Accepets Union(function, Union(args)).
+               When clicked function(args) is called.
         box_size - ratio of the size of rect to size of text
         size - size of Button
         """
         super().__init__(position, font, font_color, text, aligment, bg_image, box_size=box_size,
                          size=size)
-        self.func = func
+
+        try:
+            if len(func) != 2:
+                raise ValueError("func must be of type Union(function, Union(args))")
+        except TypeError:
+            raise ValueError("func must be of type Union(function, Union(args))")
+
+        self.func = func[0]
+        self.args = func[1]
 
     def click(self, event):
         """
@@ -86,10 +119,7 @@ class Button(TextBox):
         if event.type == pygame.MOUSEBUTTONDOWN:
             rho = [event.pos[0] - self.position[0], event.pos[1] - self.position[1]]
             if self.size[0] >= rho[0] >= 0 and self.size[1] >= rho[1] >= 0:
-                if type(self.func) != list:
-                    self.func()
-                else:
-                    self.func[0](self.rect_surface)
+                self.func(*self.args)
 
 
 class Slider:
@@ -126,7 +156,7 @@ class Slider:
         self.circle_pos = (self.position[0] + self.size[0] * self.value, self.position[1] + self.circle_size[1] / 2)
         # get surface of circle:
         self.circle_surface = pygame.image.load(self.image).convert_alpha()
-        self.circle_surface = pygame.transform.smoothscale(self.circle_surface, self.circle_size)
+        self.circle_surface = smartscale(self.circle_surface, self.circle_size)
         self.circle_surface.set_colorkey((253, 253, 253))
 
     def set_value(self, value):
@@ -226,10 +256,11 @@ class DropDown:
         for obj in self.objects:
             if obj['type'] == 'main':
                 # add main block:
-                main = TextBox((0, 0), self.font, self.font_color, obj['text'], 'left', obj['rect_image'],
+                main = TextBox((main_size[1], 0), self.font, self.font_color, obj['text'], 'left', obj['rect_image'],
                                size=main_size)
-                arrow = Button((0, 0), self.font, self.font_color,
-                               '', 'left', self.image, (self.unlock, self.lock), size=(main.size[1], main.size[1]))
+                arrow = TextBox((0, 0), self.font, self.font_color, '', 'left', self.image,
+                                size=(main_size[1], main_size[1]))
+
                 self.drawing_objects.append(main)
                 self.drawing_objects.append(arrow)
                 self.arrow = arrow
@@ -240,7 +271,7 @@ class DropDown:
                 button = Button(
                     (int((self.main.size[0] + self.arrow.size[0]) * self.constants['start']['indent']),
                      self.main.size[1] * (len(self.additional_objects) + 1)),
-                    self.font, self.font_color, obj['text'], 'left', obj['rect_image'], self.click,
+                    self.font, self.font_color, obj['text'], 'left', obj['rect_image'], [self.click, ()],
                     size=(int((self.main.size[0] + self.arrow.size[0]) * (1 - self.constants['start']['indent'])),
                           self.main.size[1]))
                 self.additional_objects.append(button)
@@ -299,10 +330,10 @@ class DropDown:
                     self.arrow.size[1] / 2:
                 # events with clicking arrow:
                 if not self.opened:
-                    self.arrow.func[0]()
+                    self.unlock()
                     self.opened = True
                 else:
-                    self.arrow.func[1]()
+                    self.lock()
                     self.opened = False
             else:
                 # events with clicking into blocks:
@@ -312,7 +343,7 @@ class DropDown:
                             0] / 2 and abs(event.pos[1] - self.position[1] - obj.position[1] - obj.size[1] / 2) <= \
                                 obj.size[1] / 2:
                             obje = self.add_obj_func[obj]
-                            obje['func'][0](obje['func'][1], obje['func'][2], obje['func'][3], obje['func'][4])
+                            obje['func'][0](obje['func'][1], obje['func'][2], obje['func'][3])
                             return True
 
         return False

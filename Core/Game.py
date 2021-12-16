@@ -197,10 +197,14 @@ class Game:
         else:
             self.bg_image = pg.transform.smoothscale(self.bg_image, (bg_width * self.height // bg_height, self.height))
 
-        self.big_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 70)
-        self.small_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 30)
+        self.combo_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 70)
+        self.accuracy_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 30)
 
     def render(self):
+        """
+        Рендерит игру
+        :return: None
+        """
         x_offset = (self.width -
                     self.track_count * (self.game_config['track_width'] + self.game_config['track_spacing']) +
                     self.game_config['track_spacing']) / 2
@@ -209,57 +213,66 @@ class Game:
             x = (self.game_config['track_width'] + self.game_config['track_spacing']) * i + x_offset
             self.tracks[i].render(self.surface, x, 0)
 
-        score_surface = self.big_font.render(f'{self.score_master.get_score()}', True, (255, 255, 255))
+        score_surface = self.combo_font.render(f'{self.score_master.get_score()}', True, (255, 255, 255))
         w, h = score_surface.get_size()
         self.surface.blit(self.bg_image, (self.width - w - 20, 20), (self.width - w - 20, 20, w, h))
         self.surface.blit(score_surface, (self.width - w - 20, 20))
 
-        accuracy_surface = self.small_font.render(f'{self.score_master.get_accuracy():.2f}%', True, (255, 255, 255))
-        max_acc_surface = self.small_font.render('100.00%', True, (255, 255, 255))
+        accuracy_surface = self.accuracy_font.render(f'{self.score_master.get_accuracy():.2f}%', True, (255, 255, 255))
+        max_acc_surface = self.accuracy_font.render('100.00%', True, (255, 255, 255))
         w1, h1 = max_acc_surface.get_size()
         w2, h2 = accuracy_surface.get_size()
         self.surface.blit(self.bg_image, (self.width - w1 - 20, 40 + h), (self.width - w1 - 20, 40 + h, w1, h1))
         self.surface.blit(accuracy_surface, (self.width - w2 - 20, 40 + h))
 
-        combo_surface = self.big_font.render(f'{self.score_master.get_combo()}x', True, (255, 255, 255))
-        max_combo_surface = self.big_font.render(f'{self.score_master.get_max_combo()}x', True, (255, 255, 255))
+        combo_surface = self.combo_font.render(f'{self.score_master.get_combo()}x', True, (255, 255, 255))
+        max_combo_surface = self.combo_font.render(f'{self.score_master.get_max_combo()}x', True, (255, 255, 255))
         w, h = max_combo_surface.get_size()[0], combo_surface.get_size()[1]
         self.surface.blit(self.bg_image, (20, self.height - h - 20),
                           (20, self.height - h - 20, w, h))
         self.surface.blit(combo_surface, (20, self.height - h - 20))
 
     def end_early(self, key_state):
+        """
+        Функция, которая активизируется если игрок хочет досрочно закончить игру.
+        :param key_state:
+        :return: None
+        """
         if key_state == 1:
             self.finished_early = self.finished = True
 
     def start(self):
+        """
+        Начинает игру.
+        :return: None
+        """
+
         self.finished = False
         self.finished_early = False
 
+        # настройка обработчика событии
         key_events = [(self.tracks[i].track_key, self.tracks[i].set_state) for i in range(self.track_count)] + \
                      [(pg.K_ESCAPE, self.end_early)]
         handler = EventHandler([(pg.QUIT, exit)], key_events)
 
-        clock = pg.time.Clock()
-        FPS = self.game_config['FPS']
-
+        # Импортирование музыки
         song = os.path.join(self.beatmap_folder, self.metadata['AudioFilename'])
         player = audioplayer.AudioPlayer(song)
         player.volume = self.volume
 
         render_start = 0
-
-        self.surface.blit(self.bg_image, (0, 0))
-
+        FPS = self.game_config['FPS']
+        clock = pg.time.Clock()
         map_duration = get_map_duration(self.hitobjects)
+        music_started = False
 
-        # if map starts to abruptly give player some time
-        if self.hitobjects[0]['time'] < 3000:
-            time_correction = 3000 - self.hitobjects[0]['time']
+        # Если карта начинается слишком быстро, создает задержку для удобства.
+        if self.hitobjects[0]['time'] < 2000:
+            time_correction = 2000 - self.hitobjects[0]['time']
         else:
             time_correction = 0
 
-        music_started = False
+        self.surface.blit(self.bg_image, (0, 0))
 
         start_time = time.time() * 1000
 
@@ -316,6 +329,9 @@ class Game:
 
 
 class EventHandler:
+    """
+    Класс для обработки событии.
+    """
     def __init__(self, regular_events, key_events):
         """
         :param regular_events: Union(Union(pg.event, function)*). Выполняет function() при pg.event
@@ -329,6 +345,10 @@ class EventHandler:
         self.key_functions = [key_events[i][1] for i in range(len(key_events))]
 
     def handle(self):
+        """
+        Обрабатывает события.
+        :return: None
+        """
         for event in pg.event.get():
             if event.type in self.regular_events_types:
                 self.regular_events_functions[self.regular_events_types.index(event.type)]()

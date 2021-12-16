@@ -1,5 +1,6 @@
-import numpy as np
 import os
+
+import numpy as np
 
 
 def parse_hitobject(track_count, s):

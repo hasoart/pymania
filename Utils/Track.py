@@ -15,6 +15,9 @@ def get_hit_windows(od):
 
 
 class Track:
+    """
+    Класс дорожки. Используется для удобной работы с дорожками.
+    """
     def __init__(self, track_number, track_key, score_list, od=5, width=100, height=800, note_height=30, hold_width=80,
                  fall_time=1000, bg_color=0xffffff, note_color=(0xff0000, 0x000000), hold_color=0x000000,
                  key_color=(0x800406, 0xe10509), hit_distance=100):

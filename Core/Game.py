@@ -326,6 +326,8 @@ class Game:
         Returns the surface with players' game statistics
         """
         rank = self.score_master.get_rank()
+        k_w, k_a = self.width/1400, self.height/700
+        k__ = min(k_w, k_a)
         surface = pg.Surface((self.width, self.height))
         font_name = os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf')
 
@@ -355,9 +357,9 @@ class Game:
 
         for phrase in inscriptions:
             size, words, color, place = phrase
-            f = pg.font.SysFont('ptmono', size)
+            f = pg.font.Font(font_name, int(k__ * size))
             text = f.render(words, False, color)
-            surface.blit(text, place)
+            surface.blit(text, (int(place[0] * k_w), int(place[1] * k_a)))
 
         if rank == 'SS':
             f2 = pg.font.Font(font_name, 240)

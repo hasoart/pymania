@@ -374,18 +374,15 @@ class Game:
 
         for phrase in inscriptions:
             size, words, color, place = phrase
-            f = pg.font.Font(font_name, int(k__ * size))
+            f = pg.font.Font(font_name, int(k_a * size/2))
             text = f.render(words, False, color)
             surface.blit(text, (int(place[0] * k_w), int(place[1] * k_a)))
 
-        if rank == 'SS':
-            f2 = pg.font.Font(font_name, 240)
-            u_rank_text = f2.render(rank, False, (180, 0, 0))
-            surface.blit(u_rank_text, (480, 80))
-        else:
-            f2 = pg.font.Font(font_name, 448)
-            u_rank_text = f2.render(rank, False, (180, 0, 0))
-            surface.blit(u_rank_text, (480, 60))
+        rank_surf = pg.image.load('./assets/ranks/' + rank + '.png')
+        rank_surf = pg.transform.scale(rank_surf, (int(k_w * rank_surf.get_width() / 3 * 2),
+                                                   int(k_a * rank_surf.get_height() / 3 * 2)))
+        rank_rect = rank_surf.get_rect(topleft=(830, 80))
+        surface.blit(rank_surf, rank_rect)
 
         return surface
 

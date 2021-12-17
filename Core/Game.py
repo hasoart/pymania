@@ -310,30 +310,52 @@ class Game:
         player.close()
         self.system_to_return.play(first_time=False)
 
-    def stats(self) -> None:
+    def stats(self) -> pg.Surface:
         """
-        Returns the surface with players' game statisctics
+        Returns the surface with players' game statistics
         """
         rank = self.score_master.get_rank()
         surface = pg.Surface((1400, 700))
+        font_name = os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf')
+
+        score = str(self.score_master.get_score())
+        hit300, hit100, hit50, misses = map(str, self.score_master.get_hit_counts())
+        max_combo = str(self.score_master.get_max_combo()) + 'x'
+        accuracy = str(round(self.score_master.get_accuracy(), 2)) + '%'
 
         frame = self.bg_image
         frame_rect = frame.get_rect(topleft=(0, 0))
         surface.blit(frame, frame_rect)
 
-        f1 = pg.font.Font(os.path.join(self.game_config['assets_directory'],
-                                       'PTMono-Regular.ttf'), 48)
-        u_rank_text = f1.render('Your Rank', False, (180, 0, 0))
-        surface.blit(u_rank_text, (500, 0))
+        inscriptions = [[120, 'Your Rank', (180, 0, 0), (900, 0)],
+                [140, 'Score:', (180, 0, 0), (50, 0)],
+                [140, score, (180, 0, 0), (380, 0)],
+                [104, 'Your results', (180, 0, 0), (160, 100)],
+                [80, ' 300  ', (180, 0, 0), (75, 180)],
+                [80, ' 100  ', (180, 0, 0), (75, 255)],
+                [80, ' 50  ', (180, 0, 0), (90, 330)],
+                [80, 'misses', (180, 0, 0), (45, 405)],
+                [80, hit300, (180, 0, 0), (400, 180)],
+                [80, hit100, (180, 0, 0), (400, 255)],
+                [80, hit50, (180, 0, 0), (400, 330)],
+                [80, misses, (180, 0, 0), (400, 405)],
+                [108, 'Max combo:', (180, 0, 0), (40, 490)],
+                [112, max_combo, (180, 0, 0), (550, 490)],
+                [108, 'Accuracy:', (180, 0, 0), (40, 595)],
+                [112, accuracy, (180, 0, 0), (450, 595)]]
+
+        for phrase in inscriptions:
+            size, words, color, place = phrase
+            f = pg.font.SysFont('ptmono', size)
+            text = f.render(words, False, color)
+            surface.blit(text, place)
 
         if rank == 'SS':
-            f2 = pg.font.Font(os.path.join(self.game_config['assets_directory'],
-                                       'PTMono-Regular.ttf'), 240)
+            f2 = pg.font.Font(font_name, 240)
             u_rank_text = f2.render(rank, False, (180, 0, 0))
             surface.blit(u_rank_text, (480, 80))
         else:
-            f2 = pg.font.Font(os.path.join(self.game_config['assets_directory'],
-                                       'PTMono-Regular.ttf'), 448)
+            f2 = pg.font.Font(font_name, 448)
             u_rank_text = f2.render(rank, False, (180, 0, 0))
             surface.blit(u_rank_text, (480, 60))
 

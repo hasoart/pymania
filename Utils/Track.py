@@ -133,7 +133,7 @@ class Track:
                             press = 0
                         elif end_score == -1:
                             hitobject['score'] = 0
-                            self.score_list.append(end_score)
+                            self.score_list.append(0)
                             press = 0
 
             if hitobject['type'] == 'note':

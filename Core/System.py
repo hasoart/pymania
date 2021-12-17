@@ -20,7 +20,7 @@ from Utils.beatmap_utils import (
 
 class System:
     # class that have all parametries of during menu-pack
-    def __init__(self, volume: int = 0.5) -> None:
+    def __init__(self) -> None:
         """
         init for class System
         bg_image - image of background screen
@@ -38,7 +38,7 @@ class System:
         self.FPS = sets['FPS']
         self.Beatmaps_directory = sets['Beatmaps_directory']
         self.assets_directory = sets['assets_directory']
-        self.sets = {'volume': volume}
+        self.sets = {'volume': sets['volume']}
         self.objects = []
 
         # open file with game constants:
@@ -58,6 +58,7 @@ class System:
 
         self.is_in_game = False
         self.finished = False
+        self.first_time = True
 
         self.place = None
         self.last_place = None
@@ -81,7 +82,7 @@ class System:
         bg = pygame.image.load(os.path.join(self.assets_directory, bg_image))
         self.bg_surface = smartscale(bg, (self.screen.get_width(), self.screen.get_height()))
 
-    def get_menu(self) -> None:
+    def get_menu(self) -> list:
         # open menu
         folder = self.assets_directory
         const = self.constants['menu']
@@ -106,7 +107,7 @@ class System:
 
         return [menu, setting, start, _exit]
 
-    def get_settings(self) -> None:
+    def get_settings(self) -> list:
         # open settings-menu
         # read contants from file
         folder = self.assets_directory
@@ -152,7 +153,7 @@ class System:
 
         return [menu_box, volume, volume_slider, _exit, bg] + bg_buttons
 
-    def get_start(self) -> None:
+    def get_start(self) -> list:
         folder = self.assets_directory
         const = self.constants['start']
         # take information about tracks into files:
@@ -217,14 +218,16 @@ class System:
     def switch_back(self) -> None:
         self.place, self.last_place = self.last_place, self.place
         self.place()
+        self.start_music_player.volume = int(100 * self.sets['volume'])
+        self.audio_player.volume = int(100 * self.sets['volume'])
 
-    def play(self, first_time: bool = True) -> None:
+    def play(self) -> None:
         # start menu-window
         FPS = self.FPS
 
         pygame.display.update()
         clock = pygame.time.Clock()
-        if first_time:
+        if self.first_time:
             self.menu()
             self.start_music_player.volume = int(100 * self.sets['volume'])
             self.start_music_player.play(loop=True)
@@ -255,8 +258,11 @@ class System:
         pygame.quit()
 
     def exit_screensaver(self) -> None:
-        print('exit')
-        self.finished = True
+        with open('./Settings/game_config.json', 'r') as f:
+            game_config = json.load(f)
+        game_config['volume'] = self.sets['volume']
+        with open('./Settings/game_config.json', 'w') as f:
+            json.dump(game_config, f, indent=4)
         exit()
 
     def start_game(self, screen: pygame.Surface, beat_map: str, diff: str) -> None:
@@ -270,4 +276,7 @@ class System:
             function()
 
         game = Game(screen, beat_map, diff, self, volume=int(100* self.sets['volume']))
-        game.start()
+        exit_code = game.start()
+
+        if exit_code == -1:
+            self.exit_screensaver()

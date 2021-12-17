@@ -118,7 +118,7 @@ class ScoreMaster:
             elif hit == 0:
                 counts[3] += 1
             else:
-                raise ValueError("Invalid value in score list")
+                raise ValueError(f"Invalid value in score list: {hit}")
 
         return tuple(counts)
 
@@ -186,6 +186,7 @@ class Game:
         self.fall_time = 1000
 
         self.system_to_return = system_to_return
+        self.exit = False
 
         for i in range(self.track_count):
             self.tracks += [Track(i, self.settings[f'{self.track_count}k_keys'][i], self.score_master,
@@ -252,19 +253,27 @@ class Game:
             elif self.finished and not self.finished_early:
                 self.finished_score_screen = True
 
-    def start(self) -> None:
+    def exit_game(self):
+        """
+        Меняет флажок sself.exit на true, что приводит к завершению игры.
+        :return:
+        """
+        self.exit = True
+
+    def start(self) -> int:
         """
         Начинает игру.
-        :return: None
+        :return: 0 если игра закончиоась натуральным ходом, -1 если игрок нажал на "закрыть окно" в системе.
         """
 
         self.finished = False
         self.finished_early = False
         self.finished_score_screen = False
+
         # настройка обработчика событии
         key_events = [(self.tracks[i].track_key, self.tracks[i].set_state) for i in range(self.track_count)] + \
                      [(pg.K_ESCAPE, self.end_early)]
-        handler = EventHandler([(pg.QUIT, exit)], key_events)
+        handler = EventHandler([(pg.QUIT, self.exit_game)], key_events)
 
         # Импортирование музыки
         song = os.path.join(self.beatmap_folder, self.metadata['AudioFilename'])
@@ -309,6 +318,9 @@ class Game:
             if map_time >= map_duration + 3000:
                 self.finished = True
 
+            if self.exit:
+                return -1
+
         if not self.finished_early:
             end_screen = self.stats()
             self.surface.blit(end_screen, (0, 0))
@@ -318,8 +330,13 @@ class Game:
                 pg.display.update()
                 clock.tick(FPS)
 
+                if self.exit:
+                    return -1
+
         player.close()
-        self.system_to_return.play(first_time=False)
+        self.system_to_return.first_time = False
+
+        return 0
 
     def stats(self) -> pg.Surface:
         """

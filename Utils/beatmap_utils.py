@@ -1,9 +1,10 @@
 import os
+from typing import Union
 
 import numpy as np
 
 
-def parse_hitobject(track_count, s):
+def parse_hitobject(track_count: int, s: str) -> dict:
     """
     Парсит строку с информацией об объекте в словарик
     :param track_count:
@@ -42,7 +43,7 @@ def parse_hitobject(track_count, s):
     return obj
 
 
-def get_metadata(file):
+def get_metadata(file: str) -> dict:
     """
     Парсит метаданные заданной карты.
 
@@ -90,7 +91,7 @@ def get_metadata(file):
         return metadata
 
 
-def get_hitobjects(file):
+def get_hitobjects(file: str) -> np.array:
     """
     Парсит объекты из файла карты.
 
@@ -118,7 +119,7 @@ def get_hitobjects(file):
         return hitobjects
 
 
-def get_beatmaps(beatmaps_folder):
+def get_beatmaps(beatmaps_folder: str) -> list:
     """
 
     :param beatmaps_folder: Папка с картами
@@ -168,7 +169,7 @@ def get_beatmaps(beatmaps_folder):
     return beatmaps_list
 
 
-def get_map_duration(hitobjects):
+def get_map_duration(hitobjects: Union[np.array, list]) -> int:
     """
     Возвращает длину карты в мс
     :param hitobjects: np.array с объектами

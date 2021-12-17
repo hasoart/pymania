@@ -1,6 +1,6 @@
 import time
 import json
-from typing import Tuple, Union, Callable
+from typing import Tuple, Callable, Sequence
 
 import pygame as pg
 import audioplayer
@@ -120,7 +120,7 @@ class ScoreMaster:
             else:
                 raise ValueError("Invalid value in score list")
 
-        return tuple(*counts)
+        return tuple(counts)
 
     def get_rank(self) -> str:
         """
@@ -181,7 +181,7 @@ class Game:
         self.score = 0
         self.score_master = ScoreMaster()
 
-        self.tracks = []
+        self.tracks: list[Track] = []
         self.track_count = int(self.metadata['CircleSize'])
         self.fall_time = 1000
 
@@ -228,15 +228,13 @@ class Game:
         self.surface.blit(score_surface, (self.width - w - 20, 20))
 
         accuracy_surface = self.accuracy_font.render(f'{self.score_master.get_accuracy():.2f}%', True, (255, 255, 255))
-        max_acc_surface = self.accuracy_font.render('100.00%', True, (255, 255, 255))
-        w1, h1 = max_acc_surface.get_size()
+        w1, h1 = self.accuracy_font.size('100.00%')
         w2, h2 = accuracy_surface.get_size()
         self.surface.blit(self.bg_image, (self.width - w1 - 20, 40 + h), (self.width - w1 - 20, 40 + h, w1, h1))
         self.surface.blit(accuracy_surface, (self.width - w2 - 20, 40 + h))
 
         combo_surface = self.combo_font.render(f'{self.score_master.get_combo()}x', True, (255, 255, 255))
-        max_combo_surface = self.combo_font.render(f'{self.score_master.get_max_combo()}x', True, (255, 255, 255))
-        w, h = max_combo_surface.get_size()[0], combo_surface.get_size()[1]
+        w, h = self.combo_font.size(f'{self.score_master.get_max_combo()}x')
         self.surface.blit(self.bg_image, (20, self.height - h - 20),
                           (20, self.height - h - 20, w, h))
         self.surface.blit(combo_surface, (20, self.height - h - 20))
@@ -247,8 +245,12 @@ class Game:
         :param key_state:
         :return: None
         """
+
         if key_state == 1:
-            self.finished_early = self.finished = True
+            if not self.finished:
+                self.finished_early = self.finished = self.finished_score_screen = True
+            elif self.finished and not self.finished_early:
+                self.finished_score_screen = True
 
     def start(self) -> None:
         """
@@ -258,7 +260,7 @@ class Game:
 
         self.finished = False
         self.finished_early = False
-
+        self.finished_score_screen = False
         # настройка обработчика событии
         key_events = [(self.tracks[i].track_key, self.tracks[i].set_state) for i in range(self.track_count)] + \
                      [(pg.K_ESCAPE, self.end_early)]
@@ -307,6 +309,15 @@ class Game:
             if map_time >= map_duration + 3000:
                 self.finished = True
 
+        if not self.finished_early:
+            end_screen = self.stats()
+            self.surface.blit(end_screen, (0, 0))
+            while not self.finished_score_screen:
+                handler.handle()
+
+                pg.display.update()
+                clock.tick(FPS)
+
         player.close()
         self.system_to_return.play(first_time=False)
 
@@ -315,7 +326,7 @@ class Game:
         Returns the surface with players' game statistics
         """
         rank = self.score_master.get_rank()
-        surface = pg.Surface((1400, 700))
+        surface = pg.Surface((self.width, self.height))
         font_name = os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf')
 
         score = str(self.score_master.get_score())
@@ -323,9 +334,7 @@ class Game:
         max_combo = str(self.score_master.get_max_combo()) + 'x'
         accuracy = str(round(self.score_master.get_accuracy(), 2)) + '%'
 
-        frame = self.bg_image
-        frame_rect = frame.get_rect(topleft=(0, 0))
-        surface.blit(frame, frame_rect)
+        surface.blit(self.bg_image, (0, 0))
 
         inscriptions = [[120, 'Your Rank', (180, 0, 0), (900, 0)],
                 [140, 'Score:', (180, 0, 0), (50, 0)],
@@ -366,17 +375,18 @@ class EventHandler:
     """
     Класс для обработки событии.
     """
-    def __init__(self, regular_events, key_events) -> None:
+    def __init__(self, regular_events: Sequence[Tuple[int, Callable]],
+                 key_events: Sequence[Tuple[int, Callable]]) -> None:
         """
-        :param regular_events: Union(Union(pg.event, function)*). Выполняет function() при pg.event
-        :param key_events: Union(Union(key, function)*). Выполняет function(key_state) если клавиша key зажата
+        :param regular_events: Tuple[Tuple[pg.event, Callable]] Выполняет Callable() при pg.event.Event
+        :param key_events: Tuple[Tuple[key: int, Callable]] Выполняет Callable(key_state) если клавиша key зажата
         """
 
-        self.regular_events_types = [regular_events[i][0] for i in range(len(regular_events))]
-        self.regular_events_functions = [regular_events[i][1] for i in range(len(regular_events))]
+        self.regular_events_types: [int] = [regular_events[i][0] for i in range(len(regular_events))]
+        self.regular_events_functions: [Callable] = [regular_events[i][1] for i in range(len(regular_events))]
 
-        self.keys = [key_events[i][0] for i in range(len(key_events))]
-        self.key_functions = [key_events[i][1] for i in range(len(key_events))]
+        self.keys: [int] = [key_events[i][0] for i in range(len(key_events))]
+        self.key_functions: [Callable] = [key_events[i][1] for i in range(len(key_events))]
 
     def handle(self) -> None:
         """

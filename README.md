@@ -26,8 +26,8 @@ pip3 install -r requirements.txt
 ```
 * Подождите, пока модули установятся
 
-Также для корректной работы на *MacOs* и таких дистрибутивах *Linux* как *Ubuntu, Debian, Redhat, CentOS, Fedora*, 
-вам стоит следовать [этим инструкциям](https://www.pypi.org/project/audioplayer).
+Также для корректной работы на *MacOs* и некоторых дистрибутивах *Linux* таких как *Ubuntu, Debian, Redhat, CentOS, Fedora*, 
+вам стоит следовать инструкциям установки вот [тут](https://www.pypi.org/project/audioplayer) или запустить соответствующий скрипт в директории **fixes/**.
 
 ## Установка
 
@@ -38,7 +38,10 @@ pip3 install -r requirements.txt
 git clone https://github.com/hasoart/pymania.git
 ```
 ## Запуск игры
-
+Для запуска игры вы должны запустить файл *pymania.py*. Для этого можете запустить терминал в папке игры и воспользоватся командой 
+```
+python3 pymania.py
+```
 При запуске игры вы попадаете в ***главное меню***. Там есть 3 кнопки:
 
 ### Exit

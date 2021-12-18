@@ -2,8 +2,62 @@ from typing import Tuple
 
 import pygame
 import audioplayer
+import os
 
 pygame.font.init()
+
+
+def stats(game) -> pygame.Surface:
+    """
+    Returns the surface with players' game statistics
+    """
+    rank = game.score_master.get_rank()
+    k_w, k_a = game.width / 1400, game.height / 700
+    surface = pygame.Surface((game.width, game.height))
+    font_name = os.path.join(game.game_config['assets_directory'], 'PTMono-Regular.ttf')
+
+    score = str(game.score_master.get_score())
+    hit300, hit100, hit50, misses = map(str, game.score_master.get_hit_counts())
+    max_combo = str(game.score_master.get_max_combo()) + 'x'
+    accuracy = str(round(game.score_master.get_accuracy(), 2)) + '%'
+
+    surface.blit(game.bg_image, (0, 0))
+
+    inscriptions = [[120, 'Your Rank', (180, 0, 0), (900, 0)],
+                    [140, 'Score:', (180, 0, 0), (50, 0)],
+                    [140, score, (180, 0, 0), (380, 0)],
+                    [104, 'Your results', (180, 0, 0), (160, 100)],
+                    [80, hit300, (180, 0, 0), (400, 180)],
+                    [80, hit100, (180, 0, 0), (400, 255)],
+                    [80, hit50, (180, 0, 0), (400, 330)],
+                    [80, misses, (180, 0, 0), (400, 405)],
+                    [108, 'Max combo:', (180, 0, 0), (40, 490)],
+                    [112, max_combo, (180, 0, 0), (550, 490)],
+                    [108, 'Accuracy:', (180, 0, 0), (40, 595)],
+                    [112, accuracy, (180, 0, 0), (450, 595)]]
+
+    for phrase in inscriptions:
+        size, words, color, place = phrase
+        f = pygame.font.Font(font_name, int(k_a * size / 2))
+        text = f.render(words, True, color)
+        surface.blit(text, (int(place[0] * k_w), int(place[1] * k_a)))
+
+    rank_surf = pygame.image.load('./assets/ranks/' + rank + '.png')
+    rank_surf = pygame.transform.scale(rank_surf, (int(k_w * rank_surf.get_width() / 3 * 2),
+                                                   int(k_a * rank_surf.get_height() / 3 * 2)))
+    rank_rect = rank_surf.get_rect(topleft=(830, 80))
+    surface.blit(rank_surf, rank_rect)
+
+    hit_numbers = ['300', '100', '50', '0']
+    for i in range(len(hit_numbers)):
+        surf = pygame.image.load('./assets/hit_numbers/hit' + hit_numbers[i] + '.png')
+        scale = k_a * surf.get_height() / 50
+        surf = pygame.transform.scale(surf, (int(k_w * surf.get_width() / scale),
+                                             int(k_a * surf.get_height() / scale)))
+        rect = surf.get_rect(topleft=(k_w * 90, k_a * (170 + i * 75)))
+        surface.blit(surf, rect)
+
+    return surface
 
 
 def smartscale(surface: pygame.Surface, size: Tuple[int, int]) -> pygame.Surface:

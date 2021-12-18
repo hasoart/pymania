@@ -22,7 +22,7 @@
 
 * Подождите, пока модуль установится
 
-Также для корректной работы на *MacOs* и таких дистрибутивах *Linux* как *Ubuntu, Debian, Redhat, CentOS, Fedora*, вам стоит следовать [этим инструкциями](www.pypi.org/project/audioplayer)
+Также для корректной работы на *MacOs* и таких дистрибутивах *Linux* как *Ubuntu, Debian, Redhat, CentOS, Fedora*, вам стоит следовать [этим инструкциям](www.pypi.org/project/audioplayer).
 
 ### Установка
 

@@ -12,10 +12,11 @@ def stats(game) -> pygame.Surface:
     Returns the surface with players' game statistics
     """
     rank = game.score_master.get_rank()
-    k_w, k_a = game.width / 1400, game.height / 700
+    k_w, k_a = game.width / 1400, game.height / 700  # counting coefficients for scaling
     surface = pygame.Surface((game.width, game.height))
     font_name = os.path.join(game.game_config['assets_directory'], 'PTMono-Regular.ttf')
 
+    # getting data that will be printed
     score = str(game.score_master.get_score())
     hit300, hit100, hit50, misses = map(str, game.score_master.get_hit_counts())
     max_combo = str(game.score_master.get_max_combo()) + 'x'
@@ -42,12 +43,14 @@ def stats(game) -> pygame.Surface:
         text = f.render(words, True, color)
         surface.blit(text, (int(place[0] * k_w), int(place[1] * k_a)))
 
+    # drawing rank
     rank_surf = pygame.image.load('./assets/ranks/' + rank + '.png')
     rank_surf = pygame.transform.scale(rank_surf, (int(k_w * rank_surf.get_width() / 3 * 2),
                                                    int(k_a * rank_surf.get_height() / 3 * 2)))
     rank_rect = rank_surf.get_rect(topleft=(830, 80))
     surface.blit(rank_surf, rank_rect)
 
+    # drawing names of different hits
     hit_numbers = ['300', '100', '50', '0']
     for i in range(len(hit_numbers)):
         surf = pygame.image.load('./assets/hit_numbers/hit' + hit_numbers[i] + '.png')

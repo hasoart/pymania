@@ -144,7 +144,8 @@ class System:
             button = Button((self.width * pos[0], self.height * pos[1]), font,
                             self.constants['colors']['common'], None, 'left', os.path.join(folder, bg_image),
                             [self.set_bg, (bg_image,)], box_size=box_size,
-                            size=(int(self.width * const['bg_button_size'][0]), int(self.height * const['bg_button_size'][1])))
+                            size=(int(self.width * const['bg_button_size'][0]),
+                                  int(self.height * const['bg_button_size'][1])))
             bg_buttons.append(button)
 
         _exit = Button((self.width * const['exit'][0], self.height * const['exit'][1]), font,
@@ -275,8 +276,10 @@ class System:
         for function in self.funtions_to_call:
             function()
 
-        game = Game(screen, beat_map, diff, self, volume=int(100* self.sets['volume']))
+        game = Game(screen, beat_map, diff, volume=int(100 * self.sets['volume']))
         exit_code = game.start()
+
+        self.first_time = False
 
         if exit_code == -1:
             self.exit_screensaver()

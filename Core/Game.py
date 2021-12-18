@@ -8,7 +8,6 @@ import audioplayer
 from Utils.beatmap_utils import *
 from Utils.Track import Track
 from Settings.settings import settings
-from Utils.ui_objects import stats
 
 
 def get_objects_to_render(map_time: int, hitobjects: np.array, hitobject_count: int,
@@ -155,7 +154,7 @@ class ScoreMaster:
 
 
 class Game:
-    def __init__(self, surface: pg.Surface, beatmap_folder: str, beatmap: str, system_to_return, volume: int = 50):
+    def __init__(self, surface: pg.Surface, beatmap_folder: str, beatmap: str, volume: int = 50):
         """
         :param surface: Поверхность игры
         :param beatmap_folder: путь директории карты
@@ -186,7 +185,6 @@ class Game:
         self.track_count = int(self.metadata['CircleSize'])
         self.fall_time = 1000
 
-        self.system_to_return = system_to_return
         self.exit = False
 
         for i in range(self.track_count):
@@ -210,6 +208,10 @@ class Game:
 
         self.combo_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 70)
         self.accuracy_font = pg.font.Font(os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf'), 30)
+
+        self.finished = False
+        self.finished_early = False
+        self.finished_score_screen = False
 
     def render(self) -> None:
         """
@@ -267,10 +269,6 @@ class Game:
         :return: 0 если игра закончиоась натуральным ходом, -1 если игрок нажал на "закрыть окно" в системе.
         """
 
-        self.finished = False
-        self.finished_early = False
-        self.finished_score_screen = False
-
         # настройка обработчика событии
         key_events = [(self.tracks[i].track_key, self.tracks[i].set_state) for i in range(self.track_count)] + \
                      [(pg.K_ESCAPE, self.end_early)]
@@ -323,7 +321,7 @@ class Game:
                 return -1
 
         if not self.finished_early:
-            end_screen = stats(self)
+            end_screen = self.stats()
             self.surface.blit(end_screen, (0, 0))
             while not self.finished_score_screen:
                 handler.handle()
@@ -335,9 +333,55 @@ class Game:
                     return -1
 
         player.close()
-        self.system_to_return.first_time = False
 
         return 0
+
+    def stats(self) -> pg.Surface:
+        """
+        Returns the surface with players' game statistics
+        """
+        rank = self.score_master.get_rank()
+        k_w, k_a = self.width/1400, self.height/700
+        k__ = min(k_w, k_a)
+        surface = pg.Surface((self.width, self.height))
+        font_name = os.path.join(self.game_config['assets_directory'], 'PTMono-Regular.ttf')
+
+        score = str(self.score_master.get_score())
+        hit300, hit100, hit50, misses = map(str, self.score_master.get_hit_counts())
+        max_combo = str(self.score_master.get_max_combo()) + 'x'
+        accuracy = str(round(self.score_master.get_accuracy(), 2)) + '%'
+
+        surface.blit(self.bg_image, (0, 0))
+
+        inscriptions = [[120, 'Your Rank', (180, 0, 0), (900, 0)],
+                        [140, f'Score: {score}', (180, 0, 0), (50, 0)],
+                        [104, 'Your results', (180, 0, 0), (160, 100)],
+                        [80, ' 300  ', (180, 0, 0), (75, 180)],
+                        [80, ' 100  ', (180, 0, 0), (75, 255)],
+                        [80, ' 50  ', (180, 0, 0), (90, 330)],
+                        [80, 'misses', (180, 0, 0), (45, 405)],
+                        [80, hit300, (180, 0, 0), (400, 180)],
+                        [80, hit100, (180, 0, 0), (400, 255)],
+                        [80, hit50, (180, 0, 0), (400, 330)],
+                        [80, misses, (180, 0, 0), (400, 405)],
+                        [108, 'Max combo:', (180, 0, 0), (40, 490)],
+                        [112, max_combo, (180, 0, 0), (550, 490)],
+                        [108, 'Accuracy:', (180, 0, 0), (40, 595)],
+                        [112, accuracy, (180, 0, 0), (450, 595)]]
+
+        for phrase in inscriptions:
+            size, words, color, place = phrase
+            f = pg.font.Font(font_name, int(k_a * size/2))
+            text = f.render(words, True, color)
+            surface.blit(text, (int(place[0] * k_w), int(place[1] * k_a)))
+
+        rank_surf = pg.image.load(os.path.join(self.game_config['assets_directory'], f'ranks/{rank}.png'))
+        rank_surf = pg.transform.scale(rank_surf, (int(k_w * rank_surf.get_width() / 3 * 2),
+                                                   int(k_a * rank_surf.get_height() / 3 * 2)))
+        rank_rect = rank_surf.get_rect(topleft=(830, 80))
+        surface.blit(rank_surf, rank_rect)
+
+        return surface
 
 
 class EventHandler:

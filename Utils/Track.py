@@ -4,8 +4,6 @@ import numpy as np
 import pygame as pg
 import pygame.draw as draw
 
-from Core.Game import ScoreMaster
-
 
 def get_hit_windows(od: float) -> Tuple[float, float, float]:
     """
@@ -23,7 +21,7 @@ class Track:
     """
     Класс дорожки. Используется для удобной работы с дорожками.
     """
-    def __init__(self, track_number: int, track_key: int, score_list: Union[List, ScoreMaster],
+    def __init__(self, track_number: int, track_key: int, score_list,
                  od: float = 5., width: int = 100, height: int = 800, note_height: int = 30, hold_width: int = 80,
                  fall_time: int = 1000,
                  bg_color: Union[int, Tuple[int, int, int]] = 0xffffff,

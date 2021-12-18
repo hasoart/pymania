@@ -44,7 +44,7 @@ def stats(game) -> pygame.Surface:
         surface.blit(text, (int(place[0] * k_w), int(place[1] * k_a)))
 
     # drawing rank
-    rank_surf = pygame.image.load('./assets/ranks/' + rank + '.png')
+    rank_surf = pygame.image.load(os.path.join(game.game_config['assets_directory'], f'ranks/{rank}.png'))
     rank_surf = pygame.transform.scale(rank_surf, (int(k_w * rank_surf.get_width() / 3 * 2),
                                                    int(k_a * rank_surf.get_height() / 3 * 2)))
     rank_rect = rank_surf.get_rect(topleft=(830, 80))
@@ -53,10 +53,11 @@ def stats(game) -> pygame.Surface:
     # drawing names of different hits
     hit_numbers = ['300', '100', '50', '0']
     for i in range(len(hit_numbers)):
-        surf = pygame.image.load('./assets/hit_numbers/hit' + hit_numbers[i] + '.png')
+        surf = pygame.image.load(os.path.join(game.game_config['assets_directory'],
+                                              f'hit_numbers/hit{hit_numbers[i]}.png'))
         scale = k_a * surf.get_height() / 50
-        surf = pygame.transform.scale(surf, (int(k_w * surf.get_width() / scale),
-                                             int(k_a * surf.get_height() / scale)))
+        surf = pygame.transform.smoothscale(surf, (int(k_w * surf.get_width() / scale),
+                                            int(k_a * surf.get_height() / scale)))
         rect = surf.get_rect(topleft=(k_w * 90, k_a * (170 + i * 75)))
         surface.blit(surf, rect)
 

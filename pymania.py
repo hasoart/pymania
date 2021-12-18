@@ -1,4 +1,4 @@
-from Core.System import System
+from core.system import System
 
 if __name__ == '__main__':
     system = System()

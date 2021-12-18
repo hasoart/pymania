@@ -5,15 +5,15 @@ from typing import Callable
 import pygame
 import audioplayer
 
-from Core.Game import Game
-from Utils.ui_objects import (
+from core.game import Game
+from utils.ui_objects import (
     TextBox,
     Button,
     Slider,
     DropDownList,
     smartscale
 )
-from Utils.beatmap_utils import (
+from utils.beatmap_utils import (
     get_beatmaps
 )
 
@@ -29,7 +29,7 @@ class System:
         blur - characteristic of sound
         offset - contacting sound and picture
         """
-        with open('./Settings/game_config.json', 'r') as f:
+        with open('./settings/game_config.json', 'r') as f:
             sets = json.load(f)
 
         self.screen = pygame.display.set_mode((sets['width'], sets['height']))
@@ -42,7 +42,7 @@ class System:
         self.objects = []
 
         # open file with game constants:
-        with open('./Settings/constants.json', 'r') as f:
+        with open('./settings/constants.json', 'r') as f:
             self.constants = json.load(f)
 
         self.bg_image = self.constants['settings']['backgrounds'][0]['image']
@@ -259,15 +259,14 @@ class System:
         pygame.quit()
 
     def exit_screensaver(self) -> None:
-        with open('./Settings/game_config.json', 'r') as f:
+        with open('./settings/game_config.json', 'r') as f:
             game_config = json.load(f)
         game_config['volume'] = self.sets['volume']
-        with open('./Settings/game_config.json', 'w') as f:
+        with open('./settings/game_config.json', 'w') as f:
             json.dump(game_config, f, indent=4)
         exit()
 
     def start_game(self, screen: pygame.Surface, beat_map: str, diff: str) -> None:
-        print(beat_map, "----", diff)
         self.audio_player.close()
         self.start_music_player.close()
         self.in_menu = False

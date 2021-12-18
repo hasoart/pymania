@@ -1,8 +1,13 @@
+from typing import Tuple, Union, List
+
+import numpy as np
 import pygame as pg
 import pygame.draw as draw
 
+from Core.Game import ScoreMaster
 
-def get_hit_windows(od):
+
+def get_hit_windows(od: float) -> Tuple[float, float, float]:
     """
     Считает рамки очков по времени
     :param od: Overal Difficulty карты
@@ -18,9 +23,14 @@ class Track:
     """
     Класс дорожки. Используется для удобной работы с дорожками.
     """
-    def __init__(self, track_number, track_key, score_list, od=5, width=100, height=800, note_height=30, hold_width=80,
-                 fall_time=1000, bg_color=0xffffff, note_color=(0xff0000, 0x000000), hold_color=0x000000,
-                 key_color=(0x800406, 0xe10509), hit_distance=100):
+    def __init__(self, track_number: int, track_key: int, score_list: Union[List, ScoreMaster],
+                 od: float = 5., width: int = 100, height: int = 800, note_height: int = 30, hold_width: int = 80,
+                 fall_time: int = 1000,
+                 bg_color: Union[int, Tuple[int, int, int]] = 0xffffff,
+                 note_color: Tuple[Union[int, Tuple[int, int, int]], Union[int, Tuple[int, int, int]]]
+                 = (0xff0000, 0x000000), hold_color: Union[int, Tuple[int, int, int]] = 0x000000,
+                 key_color: Tuple[Union[int, Tuple[int, int, int]], Union[int, Tuple[int, int, int]]]
+                 = (0x800406, 0xe10509), hit_distance: int = 100):
         """
         :param track_number: Номер дорожки
         :param track_key: Клавиша дорожки
@@ -62,8 +72,12 @@ class Track:
 
         self.surface = pg.Surface((width, height))
 
-    def get_score(self, time_diff):
-        # time_diff = current - hit
+    def get_score(self, time_diff: int) -> int:
+        """
+        Calculates the score for a given press
+        :param time_diff: current_time - hit_time
+        :return: Score earned for that hit
+        """
         if time_diff > self.window_50:
             return 0
         elif time_diff < -self.window_50:
@@ -75,7 +89,7 @@ class Track:
         elif self.window_300 >= abs(time_diff):
             return 300
 
-    def update(self, current_time, hitobject_list):
+    def update(self, current_time: int, hitobject_list: Union[np.array, List]) -> None:
         """
         Обновляет дорожку
 
@@ -164,17 +178,17 @@ class Track:
 
         self.last_state = self.state
 
-    def set_state(self, state):
+    def set_state(self, state: Union[int, bool]) -> None:
         self.state = state
 
-    def get_surface(self):
+    def get_surface(self) -> pg.Surface:
         """
         Возвращает поверхность дорожки
         :return: Поверхность дорожки
         """
         return self.surface
 
-    def render(self, screen, x, y):
+    def render(self, screen: pg.Surface, x: int, y: int) -> None:
         """
         Рендерит дорожку на screen в точке (x, y)
 

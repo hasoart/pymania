@@ -19,16 +19,10 @@ from utils.beatmap_utils import (
 
 
 class System:
-    # class that have all parametries of during menu-pack
+    """
+    Класс системы. Отвечает за интерфейс и за запуск игры.
+    """
     def __init__(self) -> None:
-        """
-        init for class System
-        bg_image - image of background screen
-        volume - volume of sound
-        dim - characteristic of sound
-        blur - characteristic of sound
-        offset - contacting sound and picture
-        """
         with open('./settings/game_config.json', 'r') as f:
             sets = json.load(f)
 

@@ -53,6 +53,9 @@ def get_objects_to_render(map_time: int, hitobjects: np.array, hitobject_count: 
 
 
 class Game:
+    """
+    Класс игры. Отвечает за рендер и логику игры, а так же за обработку и показ очков.
+    """
     def __init__(self, surface: pg.Surface, beatmap_folder: str, beatmap: str, volume: int = 50):
         """
         :param surface: Поверхность игры
@@ -112,9 +115,10 @@ class Game:
         self.finished_early = False
         self.finished_score_screen = False
 
-    def render(self) -> None:
+    def __render(self) -> None:
         """
-        Рендерит игру
+        Рендерит игру на self.surface.
+
         :return: None
         """
         x_offset = (self.width -
@@ -142,10 +146,12 @@ class Game:
                           (20, self.height - h - 20, w, h))
         self.surface.blit(combo_surface, (20, self.height - h - 20))
 
-    def end_early(self, key_state: int) -> None:
+    def __end_early(self, key_state: int) -> None:
         """
         Функция, которая активизируется если игрок хочет досрочно закончить игру.
-        :param key_state:
+
+        :param key_state: Состяние клавишы
+
         :return: None
         """
 
@@ -155,23 +161,25 @@ class Game:
             elif self.finished and not self.finished_early:
                 self.finished_score_screen = True
 
-    def exit_game(self):
+    def __exit_game(self):
         """
-        Меняет флажок sself.exit на true, что приводит к завершению игры.
-        :return:
+        Меняет флажок self.exit на true, что приводит к завершению игры.
+
+        :return: None
         """
         self.exit = True
 
     def start(self) -> int:
         """
         Начинает игру.
+
         :return: 0 если игра закончиоась натуральным ходом, -1 если игрок нажал на "закрыть окно" в системе.
         """
 
         # настройка обработчика событии
         key_events = [(self.tracks[i].track_key, self.tracks[i].set_state) for i in range(self.track_count)] + \
-                     [(pg.K_ESCAPE, self.end_early)]
-        handler = EventHandler([(pg.QUIT, self.exit_game)], key_events)
+                     [(pg.K_ESCAPE, self.__end_early)]
+        handler = EventHandler([(pg.QUIT, self.__exit_game)], key_events)
 
         # Импортирование музыки
         song = os.path.join(self.beatmap_folder, self.metadata['AudioFilename'])
@@ -207,7 +215,7 @@ class Game:
 
             for track in self.tracks:
                 track.update(map_time, self.hitobjects[render_start:render_end])
-            self.render()
+            self.__render()
             handler.handle()
 
             pg.display.update()
@@ -238,14 +246,14 @@ class Game:
 
 class EventHandler:
     """
-    Класс для обработки событии.
+    Класс  -> Noneдля обработки событии.
     """
 
     def __init__(self, regular_events: Sequence[Tuple[int, Callable]],
-                 key_events: Sequence[Tuple[int, Callable]]) -> None:
+                 key_events: Sequence[Tuple[int, Callable]]):
         """
-        :param regular_events: Tuple[Tuple[pg.event, Callable]] Выполняет Callable() при pg.event.Event
-        :param key_events: Tuple[Tuple[key: int, Callable]] Выполняет Callable(key_state) если клавиша key зажата
+        :param regular_events: Sequence[Tuple[int, Callable]] Выполняет Callable() при pg.event.Event
+        :param key_events: Sequence[Tuple[int, Callable]] Выполняет Callable(key_state) если клавиша key зажата
         """
 
         self.regular_events_types: [int] = [regular_events[i][0] for i in range(len(regular_events))]
@@ -257,6 +265,7 @@ class EventHandler:
     def handle(self) -> None:
         """
         Обрабатывает события.
+
         :return: None
         """
         for event in pg.event.get():

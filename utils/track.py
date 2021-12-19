@@ -72,6 +72,10 @@ class Track:
 
         self.surface = pg.Surface((width, height))
 
+        key_name = pg.key.name(self.track_key)
+        key_font = pg.font.Font('./assets/PTMono-Regular.ttf', hit_distance // 10)
+        self.key_name_surface = key_font.render(key_name, True, (128, 128, 128))
+
     def get_score(self, time_diff: int) -> int:
         """
         Calculates the score for a given press
@@ -99,6 +103,7 @@ class Track:
         """
         self.surface.fill(self.bg_color)
 
+        # Линия сверху клавиш
         draw.line(self.surface, 0xaaaaaa, (0, self.height - self.hit_distance - self.note_height),
                   (self.width, self.height - self.hit_distance - self.note_height), 3)
 
@@ -173,8 +178,14 @@ class Track:
                 draw.rect(self.surface, note_color, (0, y_start, self.width, self.note_height))
                 draw.rect(self.surface, note_color, (0, y_end, self.width, self.note_height))
 
+        # Клавиша
         draw.rect(self.surface, self.key_color[self.state],
                   (0, self.height - self.hit_distance, self.width, self.hit_distance))
+
+        w, h = self.key_name_surface.get_size()
+        x = (self.width - w) // 2
+        y = self.height - self.hit_distance + (self.hit_distance - h) // 2
+        self.surface.blit(self.key_name_surface, (x, y))
 
         self.last_state = self.state
 
